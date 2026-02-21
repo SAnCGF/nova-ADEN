@@ -7,7 +7,7 @@ plugins {
 android {
     namespace = "com.novaaden.nova_aden"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973"  // ✅ NDK actualizado para compatibilidad con plugins
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -30,8 +30,8 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("debug")
-            isMinifyEnabled = false
-            isShrinkResources = false
+            isMinifyEnabled = false      // ✅ Desactivar ProGuard/R8
+            isShrinkResources = false    // ✅ Desactivar shrink de recursos
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
