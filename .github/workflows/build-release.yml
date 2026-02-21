@@ -14,10 +14,10 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: 🐦 Setup Flutter (versión estable con Dart 3.10.8)
+      - name: 🐦 Setup Flutter (versión estable probada)
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.2'  # ✅ Incluye Dart 3.10.8 ESTABLE (no beta)
+          flutter-version: '3.27.0'  # ✅ Estable, probada, con Dart 3.6.0
           channel: 'stable'
           cache: true
 
@@ -27,10 +27,12 @@ jobs:
       - name: 🔨 Build Release APK
         run: |
           cd android
+          # Configurar memoria para Gradle
           echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m" >> gradle.properties
           echo "android.useAndroidX=true" >> gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
           cd ..
+          # Compilar APK release
           flutter build apk --release --target-platform android-arm64 --split-per-abi
 
       - name: 📤 Upload APK
