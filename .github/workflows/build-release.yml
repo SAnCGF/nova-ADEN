@@ -1,4 +1,4 @@
-name: Build Release APK (Firmada)
+name: Build APK (Debug - Compatible)
 
 on:
   workflow_dispatch:
@@ -21,61 +21,28 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
       
-      - name: Create Keystore
-        run: |
-          mkdir -p android/app
-          keytool -genkey -v -keystore android/app/nova-aden.keystore \
-            -alias nova-aden \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 9125 \
-            -storepass nova1234 \
-            -keypass nova1234 \
-            -dname "CN=Nova ADEN, OU=Desarrollo, O=Nova ADEN, L=La Habana, ST=La Habana, C=CU"
-          echo "Keystore creado"
-      
-      - name: Create key.properties
-        run: |
-          cat > android/key.properties << 'KEYS'
-          storePassword=nova1234
-          keyPassword=nova1234
-          keyAlias=nova-aden
-          storeFile=nova-aden.keystore
-          KEYS
-          echo "key.properties creado"
-      
-      - name: Build Signed APK
-        run: |
-          cd android
-          echo "org.gradle.jvmargs=-Xmx4096m" >> gradle.properties
-          echo "android.useAndroidX=true" >> gradle.properties
-          echo "android.enableJetifier=true" >> gradle.properties
-          cd ..
-          flutter build apk --release
-          
+      - name: Build APK Debug (Firma Estándar Android)
+        run: flutter build apk --debug --target-platform android-arm64
+        
       - name: Verify APK
         run: |
           echo "=== Archivos generados ==="
           ls -lh build/app/outputs/flutter-apk/
           
-          if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
-            APK_SIZE=$(stat -c%s build/app/outputs/flutter-apk/app-release.apk)
+          if [ -f "build/app/outputs/flutter-apk/app-debug.apk" ]; then
+            APK_SIZE=$(stat -c%s build/app/outputs/flutter-apk/app-debug.apk)
             APK_SIZE_MB=$((APK_SIZE / 1024 / 1024))
             echo "Tamaño: ${APK_SIZE_MB} MB"
-            
-            # Verificar firma
-            echo "=== Verificando firma ==="
-            unzip -p build/app/outputs/flutter-apk/app-release.apk META-INF/MANIFEST.MF > /dev/null 2>&1 && \
-              echo "✅ APK tiene firma válida" || echo "❌ APK sin firma"
+            echo "✅ APK Debug con firma estándar de Android"
           else
-            echo "ERROR: APK no encontrada"
+            echo "❌ ERROR: APK no encontrada"
             exit 1
           fi
           
-      - name: Upload Signed APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: nova-ADEN-SIGNED-APK
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: nova-ADEN-DEBUG
+          path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 30
           if-no-files-found: error
