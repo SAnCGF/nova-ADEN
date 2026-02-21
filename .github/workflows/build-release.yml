@@ -21,17 +21,19 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
       
-      - name: Configure Gradle Properties (SIN enableR8)
+      - name: Configure Gradle
         run: |
           cd android
           echo "org.gradle.jvmargs=-Xmx4096m" >> gradle.properties
           echo "android.useAndroidX=true" >> gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
-          # NO agregar android.enableR8 (obsoleto desde AGP 7.0)
           cd ..
       
-      - name: Build APK Release
-        run: flutter build apk --release --target-platform android-arm64
+      - name: Build APK Release (UNIVERSAL - SIN TREE SHAKE)
+        run: |
+          # Build SIN --target-platform para APK universal (todas las arquitecturas)
+          # SIN --no-tree-shake-icons para incluir todos los íconos
+          flutter build apk --release --no-tree-shake-icons
       
       - name: Verify APK
         run: |
@@ -47,7 +49,15 @@ jobs:
             echo "================================"
             echo "Archivo: app-release.apk"
             echo "Tamaño: ${APK_SIZE_MB} MB"
+            echo "Tipo: Universal (todas las arquitecturas)"
+            echo "Íconos: Completos (sin tree shake)"
             echo "================================"
+            
+            if [ $APK_SIZE_MB -lt 20 ]; then
+              echo "⚠️ WARNING: APK parece pequeña"
+            else
+              echo "✅ OK: Tamaño correcto (~20-50 MB)"
+            fi
           else
             echo "❌ ERROR: app-release.apk no encontrada"
             exit 1
