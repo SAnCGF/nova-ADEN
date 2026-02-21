@@ -24,23 +24,35 @@ jobs:
       - name: 📦 Install dependencies
         run: flutter pub get
 
-      - name: 🔨 Build Release APK
+      - name: 🔨 Build Release APK (Universal - Sin Split)
         run: |
           cd android
           echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m" >> gradle.properties
           echo "android.useAndroidX=true" >> gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
+          echo "ndkVersion=27.0.12077973" >> gradle.properties
           cd ..
-          flutter build apk --release --target-platform android-arm64 --split-per-abi
           
-          echo "=== APKs generadas ==="
+          # Build SIN split-per-abi para APK universal completa
+          flutter build apk --release --target-platform android-arm64
+          
+          echo ""
+          echo "=== Verificando APK ==="
           ls -lh build/app/outputs/flutter-apk/
+          
+          # Verificar que existe
+          if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
+            echo "✅ APK universal generada"
+          else
+            echo "❌ ERROR: No se encontró app-release.apk"
+            exit 1
+          fi
 
       - name: 📤 Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: nova-ADEN-RELEASE-APK
-          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
           if-no-files-found: error
 
@@ -48,4 +60,4 @@ jobs:
         run: |
           echo "🎉 Build exitoso!"
           echo "📱 APK lista para descargar desde Artifacts"
-          ls -lh build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          ls -lh build/app/outputs/flutter-apk/app-release.apk
