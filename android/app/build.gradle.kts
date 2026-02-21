@@ -7,11 +7,12 @@ plugins {
 android {
     namespace = "com.novaaden.nova_aden"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"  // ✅ NDK actualizado para compatibilidad con plugins
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -29,23 +30,13 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("debug")
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
-        debug {
-            // Optimizaciones para build debug también
-            isMinifyEnabled = false
-            isShrinkResources = false
-        }
-    }
-    
-    // Optimización de recursos
-    androidResources {
-        noCompress += listOf("bin", "dat", "db")
     }
 }
 
@@ -55,4 +46,5 @@ flutter {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.20")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
