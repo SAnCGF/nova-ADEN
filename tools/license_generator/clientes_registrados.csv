@@ -1,0 +1,5 @@
+ID_Cliente,Nombre_Negocio,Email_Telefono,Codigo_Licencia,Fecha_Generacion,Estado,Notas
+CLIENTE001,MIPYME El Ahorro,elahorro@email.com,NOVA-9E79-2E10-057D,2026-02-20,Activo,
+DESARROLLADOR,nova-ADEN Development,52634163,NOVA-5DD4-CA46-9DE8,2026-02-20,Activo,
+Desarrollador,nova_ADEN,52634163,NOVA-0778-A026-8D53,2026-02-20,Activo,
+DESARROLLADOR,nova-ADEN Development,desarrollador@nova-aden.com,NOVA-0778-A026-8D53,2026-02-20,Activo,Licencia del desarrollador

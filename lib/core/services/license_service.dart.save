@@ -1,0 +1,66 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
+
+class LicenseService {
+  static const String _licenseKey = 'nova_aden_license_v1';
+  
+  // Clave secreta para generar hashes (cambiar en producción)
+  static const String _secretKey = 'nova-ADEN-2025-Cuba-MIPYME';
+  
+  /// Genera un código de licencia único para un cliente
+  /// Ejemplo: NOVA-AB12-CD34-EF56
+  static String generateLicenseCode({
+    required String clientId,
+    required String businessName,
+  }) {
+    final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+    final data = '$clientId-$businessName-$_secretKey-$timestamp';
+    final hash = sha256.convert(utf8.encode(data)).toString().toUpperCase();
+    
+    // Formato: NOVA-XXXX-XXXX-XXXX
+    return 'NOVA-${hash.substring(0, 4)}-${hash.substring(4, 8)}-${hash.substring(8, 12)}';
+  }
+  
+  /// Valida un código de licencia
+  static bool validateLicenseCode(String licenseCode) {
+    // Formato básico: NOVA-XXXX-XXXX-XXXX (19 caracteres)
+    if (licenseCode.length != 19) return false;
+    if (!licenseCode.startsWith('NOVA-')) return false;
+    
+    // Validar que solo contiene letras mayúsculas y números
+    final pattern = RegExp(r'^NOVA-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$');
+    return pattern.hasMatch(licenseCode);
+  }
+  
+  /// Guarda la licencia en el dispositivo
+  static Future<void> saveLicense(String licenseCode) async {
+    // Usando SharedPreferences (agregar dependencia)
+    // Por ahora usamos memoria (se implementará con sqflite)
+    await _saveToSecureStorage(licenseCode);
+  }
+  
+  /// Verifica si hay una licencia guardada
+  static Future<String?> getSavedLicense() async {
+    return await _loadFromSecureStorage();
+  }
+  
+  /// Elimina la licencia (para testing)
+  static Future<void> clearLicense() async {
+    await _clearSecureStorage();
+  }
+  
+  // Métodos simulados (se implementarán con flutter_secure_storage)
+  static String? _storedLicense;
+  
+  static Future<void> _saveToSecureStorage(String license) async {
+    _storedLicense = license;
+  }
+  
+  static Future<String?> _loadFromSecureStorage() async {
+    return _storedLicense;
+  }
+  
+  static Future<void> _clearSecureStorage() async {
+    _storedLicense = null;
+  }
+}

@@ -1,25 +1,64 @@
-cat > lib/main.dart << 'EOF'
 import 'package:flutter/material.dart';
-import 'package:nova_aden/Nucleo/di/injection.dart';
-import 'package:nova_aden/Presentacion/screens/gestion_producto_screen.dart';
-import 'package:provider/provider.dart';
+import 'package:nova_aden/core/constants/app_constants.dart';
+import 'package:nova_aden/presentation/pages/splash_page.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await init();
-  runApp(const MyApp());
+void main() {
+  // WidgetsFlutterBinding se inicializa automáticamente con runApp
+  // No es necesario llamarlo explícitamente a menos que uses plugins antes de runApp
+  runApp(const NovaAdenApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class NovaAdenApp extends StatelessWidget {
+  const NovaAdenApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'nova-ADEN',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: const GestionProductoScreen(),
+      title: AppConstants.appName,
+      debugShowCheckedModeBanner: false,
+      
+      // Tema claro
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(AppConstants.primaryColorValue),
+          brightness: Brightness.light,
+        ),
+        useMaterial3: true,
+        cardTheme: CardThemeData(
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        appBarTheme: const AppBarTheme(centerTitle: true, elevation: 2),
+      ),
+      
+      // Tema oscuro
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(AppConstants.primaryColorValue),
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+        cardTheme: CardThemeData(
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        appBarTheme: const AppBarTheme(centerTitle: true, elevation: 2),
+      ),
+      
+      // Usar tema del sistema
+      themeMode: ThemeMode.system,
+      
+      // Pantalla inicial optimizada
+      home: const SplashPage(),
+      
+      // Prevenir rebuilds innecesarios
+      builder: (context, child) {
+        // Desactivar banner de debug para mejor rendimiento
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+          child: child!,
+        );
+      },
     );
   }
 }
-EOF

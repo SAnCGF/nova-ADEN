@@ -89,11 +89,11 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
+            VALUE "CompanyName", "com.novaaden" "\0"
             VALUE "FileDescription", "nova_aden" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "nova_aden" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.novaaden. All rights reserved." "\0"
             VALUE "OriginalFilename", "nova_aden.exe" "\0"
             VALUE "ProductName", "nova_aden" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
