@@ -1,9 +1,9 @@
 name: 🚀 Build Release APK
 
 on:
-  workflow_dispatch:  # Ejecutar manualmente desde GitHub
+  workflow_dispatch:
   push:
-    branches: [ main ]  # Opcional: build automático al hacer push
+    branches: [ main ]
 
 jobs:
   build-release:
@@ -14,10 +14,10 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: 🐦 Setup Flutter
+      - name: 🐦 Setup Flutter (versión correcta)
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.0'
+          flutter-version: '3.19.0'  # ✅ Versión compatible con ^3.10.0
           channel: 'stable'
           cache: true
 
@@ -28,7 +28,13 @@ jobs:
         run: flutter analyze
 
       - name: 🔨 Build Release APK
-        run: flutter build apk --release --target-platform android-arm64 --split-per-abi
+        run: |
+          cd android
+          echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m" >> gradle.properties
+          echo "android.useAndroidX=true" >> gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
+          cd ..
+          flutter build apk --release --target-platform android-arm64 --split-per-abi
 
       - name: 📤 Upload APK Artifact
         uses: actions/upload-artifact@v4
@@ -40,6 +46,4 @@ jobs:
       - name: ✅ Build Complete
         run: |
           echo "🎉 Build exitoso!"
-          echo "📱 APK: app-arm64-v8a-release.apk"
-          echo "🔑 Licencia dev: NOVA-0778-A026-8D53"
-          echo "📥 Descarga desde: Actions → Build Release APK → Artifacts"
+          echo "📱 APK lista para descargar"
