@@ -1,4 +1,4 @@
-name: Build APK (Debug - Compatible)
+name: Build Release APK (Production)
 
 on:
   workflow_dispatch:
@@ -21,28 +21,68 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
       
-      - name: Build APK Debug (Firma Estándar Android)
-        run: flutter build apk --debug --target-platform android-arm64
-        
+      - name: Verify Structure
+        run: |
+          echo "=== Archivos Dart en lib/ ==="
+          find lib -name "*.dart" -type f | wc -l
+          echo ""
+          echo "=== Archivos clave ==="
+          ls -lh lib/main.dart
+          ls -lh lib/data/datasources/*.dart
+          ls -lh lib/presentation/bloc/*.dart
+      
+      - name: Configure Gradle Properties
+        run: |
+          cd android
+          echo "org.gradle.jvmargs=-Xmx4096m" >> gradle.properties
+          echo "android.useAndroidX=true" >> gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
+          cd ..
+      
+      - name: Build APK Release
+        run: flutter build apk --release --target-platform android-arm64
+      
       - name: Verify APK
         run: |
-          echo "=== Archivos generados ==="
+          echo "=== APKs generadas ==="
           ls -lh build/app/outputs/flutter-apk/
           
-          if [ -f "build/app/outputs/flutter-apk/app-debug.apk" ]; then
-            APK_SIZE=$(stat -c%s build/app/outputs/flutter-apk/app-debug.apk)
+          if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
+            APK_SIZE=$(stat -c%s build/app/outputs/flutter-apk/app-release.apk)
             APK_SIZE_MB=$((APK_SIZE / 1024 / 1024))
+            echo ""
+            echo "================================"
+            echo "  APK RELEASE GENERADA"
+            echo "================================"
+            echo "Archivo: app-release.apk"
             echo "Tamaño: ${APK_SIZE_MB} MB"
-            echo "✅ APK Debug con firma estándar de Android"
+            echo "Tipo: Production Release"
+            echo "================================"
+            
+            if [ $APK_SIZE_MB -lt 20 ]; then
+              echo "⚠️ WARNING: APK parece pequeña"
+            else
+              echo "✅ OK: Tamaño correcto para release"
+            fi
           else
-            echo "❌ ERROR: APK no encontrada"
+            echo "❌ ERROR: app-release.apk no encontrada"
             exit 1
           fi
-          
+      
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: nova-ADEN-DEBUG
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: nova-ADEN-RELEASE-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
           if-no-files-found: error
+      
+      - name: Build Complete
+        run: |
+          echo ""
+          echo "🎉 BUILD RELEASE COMPLETADO!"
+          echo ""
+          echo "📱 APK: nova-ADEN-RELEASE-APK"
+          echo "📥 Descarga desde: Artifacts"
+          echo "🔑 Licencia: NOVA-0778-A026-8D53"
+          echo ""
