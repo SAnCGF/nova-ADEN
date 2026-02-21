@@ -21,22 +21,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
       
-      - name: Verify Structure
-        run: |
-          echo "=== Archivos Dart en lib/ ==="
-          find lib -name "*.dart" -type f | wc -l
-          echo ""
-          echo "=== Archivos clave ==="
-          ls -lh lib/main.dart
-          ls -lh lib/data/datasources/*.dart
-          ls -lh lib/presentation/bloc/*.dart
-      
-      - name: Configure Gradle Properties
+      - name: Configure Gradle Properties (SIN enableR8)
         run: |
           cd android
           echo "org.gradle.jvmargs=-Xmx4096m" >> gradle.properties
           echo "android.useAndroidX=true" >> gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
+          # NO agregar android.enableR8 (obsoleto desde AGP 7.0)
           cd ..
       
       - name: Build APK Release
@@ -56,14 +47,7 @@ jobs:
             echo "================================"
             echo "Archivo: app-release.apk"
             echo "Tamaño: ${APK_SIZE_MB} MB"
-            echo "Tipo: Production Release"
             echo "================================"
-            
-            if [ $APK_SIZE_MB -lt 20 ]; then
-              echo "⚠️ WARNING: APK parece pequeña"
-            else
-              echo "✅ OK: Tamaño correcto para release"
-            fi
           else
             echo "❌ ERROR: app-release.apk no encontrada"
             exit 1
@@ -76,13 +60,3 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
           if-no-files-found: error
-      
-      - name: Build Complete
-        run: |
-          echo ""
-          echo "🎉 BUILD RELEASE COMPLETADO!"
-          echo ""
-          echo "📱 APK: nova-ADEN-RELEASE-APK"
-          echo "📥 Descarga desde: Artifacts"
-          echo "🔑 Licencia: NOVA-0778-A026-8D53"
-          echo ""
