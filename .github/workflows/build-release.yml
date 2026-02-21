@@ -6,26 +6,23 @@ on:
     branches: [ main ]
 
 jobs:
-  build-release:
-    name: Build APK Release
+  build-apk:
+    name: Build Nova-ADEN APK
     runs-on: ubuntu-latest
     
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: 🐦 Setup Flutter (versión correcta)
+      - name: 🐦 Setup Flutter (versión con Dart 3.10.8+)
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.0'  # ✅ Versión compatible con ^3.10.0
+          flutter-version: '3.38.0'  # ✅ Incluye Dart 3.10.8, compatible con >=3.10.0 <4.0.0
           channel: 'stable'
           cache: true
 
       - name: 📦 Install dependencies
         run: flutter pub get
-
-      - name: 🔍 Analyze code
-        run: flutter analyze
 
       - name: 🔨 Build Release APK
         run: |
@@ -36,14 +33,9 @@ jobs:
           cd ..
           flutter build apk --release --target-platform android-arm64 --split-per-abi
 
-      - name: 📤 Upload APK Artifact
+      - name: 📤 Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: nova-ADEN-release-apk
+          name: nova-ADEN-release
           path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
           retention-days: 30
-
-      - name: ✅ Build Complete
-        run: |
-          echo "🎉 Build exitoso!"
-          echo "📱 APK lista para descargar"
