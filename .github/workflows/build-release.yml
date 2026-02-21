@@ -8,53 +8,48 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.27.0'
           channel: 'stable'
-          
+
       - name: Install dependencies
         run: flutter pub get
-      
-      - name: Build Release APK
+
+      - name: Build APK Release (UNIVERSAL)
+        run: flutter build apk --release --no-tree-shake-icons
+
+      - name: List APK files
         run: |
-          cd android
-          echo "org.gradle.jvmargs=-Xmx4096m" >> gradle.properties
-          echo "android.useAndroidX=true" >> gradle.properties
-          echo "android.enableJetifier=true" >> gradle.properties
-          cd ..
-          flutter build apk --release --target-platform android-arm64
-          
-      - name: Verify APK exists and size
-        run: |
-          echo "=== Files in flutter-apk directory ==="
+          echo "=== Archivos en flutter-apk ==="
           ls -lh build/app/outputs/flutter-apk/
-          
-          echo "=== Checking APK size ==="
+
+      - name: Check APK size
+        run: |
+          echo "=== Tamaño del APK ==="
           if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
             APK_SIZE=$(stat -c%s build/app/outputs/flutter-apk/app-release.apk)
             APK_SIZE_MB=$((APK_SIZE / 1024 / 1024))
-            echo "APK Size: ${APK_SIZE_MB} MB (${APK_SIZE} bytes)"
-            
+            echo "Tamaño: ${APK_SIZE_MB} MB (${APK_SIZE} bytes)"
             if [ $APK_SIZE_MB -lt 20 ]; then
-              echo "WARNING: APK seems small (< 20 MB)"
+              echo "WARNING: APK parece pequeña (< 20 MB)"
             else
-              echo "OK: APK size looks correct"
+              echo "OK: Tamaño correcto"
             fi
           else
-            echo "ERROR: app-release.apk not found!"
+            echo "ERROR: app-release.apk no encontrado"
             exit 1
           fi
-          
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: nova-ADEN-REAL-APK
+          name: nova-ADEN-APK-Release-${{ github.sha }}
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
           if-no-files-found: error
