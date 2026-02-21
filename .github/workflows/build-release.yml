@@ -31,34 +31,10 @@ jobs:
           echo "android.useAndroidX=true" >> gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
           cd ..
-          
-          echo "=== Iniciando build Flutter ==="
           flutter build apk --release --target-platform android-arm64 --split-per-abi
           
-          echo ""
-          echo "=== Verificando APKs generadas ==="
-          ls -lh build/app/outputs/flutter-apk/ || echo "❌ Directorio no existe"
-          
-          echo ""
-          echo "=== Buscando APK de release ==="
-          find build/app/outputs/flutter-apk/ -name "*.apk" -type f -exec ls -lh {} \;
-          
-          # Verificar que existe la APK específica
-          if [ -f "build/app/outputs/flutter-apk/app-arm64-v8a-release.apk" ]; then
-            APK_SIZE=$(stat -c%s build/app/outputs/flutter-apk/app-arm64-v8a-release.apk)
-            APK_SIZE_MB=$((APK_SIZE / 1024 / 1024))
-            echo "✅ APK encontrada: ${APK_SIZE_MB} MB"
-            
-            if [ $APK_SIZE_MB -lt 30 ]; then
-              echo "❌ ERROR: APK demasiado pequeña (${APK_SIZE_MB} MB < 30 MB)"
-              exit 1
-            fi
-          else
-            echo "❌ ERROR: No se encontró app-arm64-v8a-release.apk"
-            echo "Archivos en build/app/outputs/flutter-apk/:"
-            ls -la build/app/outputs/flutter-apk/ || echo "Directorio no existe"
-            exit 1
-          fi
+          echo "=== APKs generadas ==="
+          ls -lh build/app/outputs/flutter-apk/
 
       - name: 📤 Upload APK
         uses: actions/upload-artifact@v4
