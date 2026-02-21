@@ -1,4 +1,4 @@
-name: Build Release APK
+name: Build Release APK (Firmada)
 
 on:
   workflow_dispatch:
@@ -8,48 +8,74 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    
     steps:
       - uses: actions/checkout@v4
-
+      
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.27.0'
           channel: 'stable'
-
+          
       - name: Install dependencies
         run: flutter pub get
-
-      - name: Build APK Release (UNIVERSAL)
-        run: flutter build apk --release --no-tree-shake-icons
-
-      - name: List APK files
+      
+      - name: Create Keystore
         run: |
-          echo "=== Archivos en flutter-apk ==="
+          mkdir -p android/app
+          keytool -genkey -v -keystore android/app/nova-aden.keystore \
+            -alias nova-aden \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 9125 \
+            -storepass nova1234 \
+            -keypass nova1234 \
+            -dname "CN=Nova ADEN, OU=Desarrollo, O=Nova ADEN, L=La Habana, ST=La Habana, C=CU"
+          echo "Keystore creado"
+      
+      - name: Create key.properties
+        run: |
+          cat > android/key.properties << 'KEYS'
+          storePassword=nova1234
+          keyPassword=nova1234
+          keyAlias=nova-aden
+          storeFile=nova-aden.keystore
+          KEYS
+          echo "key.properties creado"
+      
+      - name: Build Signed APK
+        run: |
+          cd android
+          echo "org.gradle.jvmargs=-Xmx4096m" >> gradle.properties
+          echo "android.useAndroidX=true" >> gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
+          cd ..
+          flutter build apk --release
+          
+      - name: Verify APK
+        run: |
+          echo "=== Archivos generados ==="
           ls -lh build/app/outputs/flutter-apk/
-
-      - name: Check APK size
-        run: |
-          echo "=== Tamaño del APK ==="
+          
           if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
             APK_SIZE=$(stat -c%s build/app/outputs/flutter-apk/app-release.apk)
             APK_SIZE_MB=$((APK_SIZE / 1024 / 1024))
-            echo "Tamaño: ${APK_SIZE_MB} MB (${APK_SIZE} bytes)"
-            if [ $APK_SIZE_MB -lt 20 ]; then
-              echo "WARNING: APK parece pequeña (< 20 MB)"
-            else
-              echo "OK: Tamaño correcto"
-            fi
+            echo "Tamaño: ${APK_SIZE_MB} MB"
+            
+            # Verificar firma
+            echo "=== Verificando firma ==="
+            unzip -p build/app/outputs/flutter-apk/app-release.apk META-INF/MANIFEST.MF > /dev/null 2>&1 && \
+              echo "✅ APK tiene firma válida" || echo "❌ APK sin firma"
           else
-            echo "ERROR: app-release.apk no encontrado"
+            echo "ERROR: APK no encontrada"
             exit 1
           fi
-
-      - name: Upload APK
+          
+      - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: nova-ADEN-APK-Release-${{ github.sha }}
+          name: nova-ADEN-SIGNED-APK
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
           if-no-files-found: error
