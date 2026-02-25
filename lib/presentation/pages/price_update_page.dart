@@ -12,7 +12,6 @@ class _PriceUpdatePageState extends State<PriceUpdatePage> {
   final SettingsRepository _repository = SettingsRepository();
   final TextEditingController _valueController = TextEditingController();
   
-  String _filterType = 'all';
   String _updateType = 'percentage';
   bool _increase = true;
   bool _isLoading = false;
@@ -61,7 +60,6 @@ class _PriceUpdatePageState extends State<PriceUpdatePage> {
     setState(() => _isLoading = true);
 
     final success = await _repository.updatePricesMassively(
-      filterType: _filterType,
       updateType: _updateType,
       value: value,
       increase: _increase,
@@ -78,7 +76,6 @@ class _PriceUpdatePageState extends State<PriceUpdatePage> {
   }
 
   String _getFilterLabel() {
-    switch (_filterType) {
       case 'all': return 'Todos los productos';
       case 'low_stock': return 'Productos con stock bajo';
       case 'high_stock': return 'Productos con stock alto';
@@ -115,8 +112,6 @@ class _PriceUpdatePageState extends State<PriceUpdatePage> {
                           ...['all', 'low_stock', 'high_stock'].map((filter) => RadioListTile<String>(
                             title: Text(_getFilterLabelFor(filter)),
                             value: filter,
-                            groupValue: _filterType,
-                            onChanged: (v) => setState(() => _filterType = v!),
                           )),
                         ],
                       ),

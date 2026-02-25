@@ -3,52 +3,13 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-class Settings {
-  String currency;
-  double exchangeRate;
-  String companyName;
-  String rnc;
-  String address;
-  String phone;
-
-  Settings({
-    this.currency = 'CUP',
-    this.exchangeRate = 1.0,
-    this.companyName = '',
-    this.rnc = '',
-    this.address = '',
-    this.phone = '',
-  });
-
-  Map<String, dynamic> toMap() {
-    return {
-      'currency': currency,
-      'exchangeRate': exchangeRate,
-      'companyName': companyName,
-      'rnc': rnc,
-      'address': address,
-      'phone': phone,
-    };
-  }
-
-  factory Settings.fromMap(Map<String, dynamic> map) {
-    return Settings(
-      currency: map['currency'] ?? 'CUP',
-      exchangeRate: (map['exchangeRate'] ?? 1.0).toDouble(),
-      companyName: map['companyName'] ?? '',
-      rnc: map['rnc'] ?? '',
-      address: map['address'] ?? '',
-      phone: map['phone'] ?? '',
-    );
-  }
-}
+import '../models/app_settings.dart';
 
 class SettingsRepository {
-  Future<Settings> getSettings() async {
+  Future<AppSettings> getSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      return Settings(
+      return AppSettings(
         currency: prefs.getString('currency') ?? 'CUP',
         exchangeRate: prefs.getDouble('exchangeRate') ?? 1.0,
         companyName: prefs.getString('companyName') ?? '',
@@ -57,11 +18,11 @@ class SettingsRepository {
         phone: prefs.getString('phone') ?? '',
       );
     } catch (e) {
-      return Settings();
+      return AppSettings();
     }
   }
 
-  Future<bool> saveSettings(Settings settings) async {
+  Future<bool> saveSettings(AppSettings settings) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('currency', settings.currency);
