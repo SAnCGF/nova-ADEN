@@ -29,11 +29,8 @@ jobs:
           echo "android.enableJetifier=true" >> gradle.properties
           cd ..
       
-      - name: Build APK Release (UNIVERSAL - SIN TREE SHAKE)
-        run: |
-          # Build SIN --target-platform para APK universal (todas las arquitecturas)
-          # SIN --no-tree-shake-icons para incluir todos los íconos
-          flutter build apk --release --no-tree-shake-icons
+      - name: Build APK Release (UNIVERSAL - CON ICONOS)
+        run: flutter build apk --release --no-tree-shake-icons
       
       - name: Verify APK
         run: |
@@ -49,14 +46,12 @@ jobs:
             echo "================================"
             echo "Archivo: app-release.apk"
             echo "Tamaño: ${APK_SIZE_MB} MB"
-            echo "Tipo: Universal (todas las arquitecturas)"
-            echo "Íconos: Completos (sin tree shake)"
             echo "================================"
             
             if [ $APK_SIZE_MB -lt 20 ]; then
               echo "⚠️ WARNING: APK parece pequeña"
             else
-              echo "✅ OK: Tamaño correcto (~20-50 MB)"
+              echo "✅ OK: Tamaño correcto (20-30 MB)"
             fi
           else
             echo "❌ ERROR: app-release.apk no encontrada"
