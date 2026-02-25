@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nova_aden/core/repositories/settings_repository.dart';
+import '../../core/repositories/product_repository.dart';
 
 class PriceUpdatePage extends StatefulWidget {
   const PriceUpdatePage({super.key});
@@ -9,9 +9,10 @@ class PriceUpdatePage extends StatefulWidget {
 }
 
 class _PriceUpdatePageState extends State<PriceUpdatePage> {
-  final SettingsRepository _repository = SettingsRepository();
+  final ProductRepository _repository = ProductRepository();
   final TextEditingController _valueController = TextEditingController();
   
+  String _filterType = 'all';
   String _updateType = 'percentage';
   bool _increase = true;
   bool _isLoading = false;
@@ -22,60 +23,8 @@ class _PriceUpdatePageState extends State<PriceUpdatePage> {
     super.dispose();
   }
 
-  Future<void> _updatePrices() async {
-    final value = double.tryParse(_valueController.text);
-    if (value == null || value <= 0) {
-      _showSnackBar('Ingresa un valor válido', isError: true);
-      return;
-    }
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Confirmar Actualización'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Filtro: ${_getFilterLabel()}'),
-            Text('Tipo: ${_increase ? "Aumento" : "Disminución"}'),
-            Text('Valor: ${_updateType == 'percentage' ? '$value%' : '\$${value.toStringAsFixed(2)}'}'),
-            const SizedBox(height: 16),
-            const Text('⚠️ Esta acción no se puede deshacer', style: TextStyle(color: Colors.red)),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            child: const Text('Confirmar'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    setState(() => _isLoading = true);
-
-    final success = await _repository.updatePricesMassively(
-      updateType: _updateType,
-      value: value,
-      increase: _increase,
-    );
-
-    setState(() => _isLoading = false);
-
-    if (success && mounted) {
-      _showSnackBar('✅ Precios actualizados exitosamente');
-      Navigator.pop(context);
-    } else {
-      _showSnackBar('Error al actualizar precios', isError: true);
-    }
-  }
-
-  String _getFilterLabel() {
+  String _getFilterLabel(String type) {
+    switch (type) {
       case 'all': return 'Todos los productos';
       case 'low_stock': return 'Productos con stock bajo';
       case 'high_stock': return 'Productos con stock alto';
@@ -83,41 +32,53 @@ class _PriceUpdatePageState extends State<PriceUpdatePage> {
     }
   }
 
-  void _showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: isError ? Colors.red : Colors.green),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Actualizar Precios Masivamente')),
+      appBar: AppBar(
+        title: const Text('Actualización Masiva de Precios'),
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Filtro
+                  // Filtro de productos
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Filtrar Productos', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Filtrar Productos',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
                           const SizedBox(height: 12),
-                          ...['all', 'low_stock', 'high_stock'].map((filter) => RadioListTile<String>(
-                            title: Text(_getFilterLabelFor(filter)),
-                            value: filter,
-                          )),
+                          RadioListTile<String>(
+                            title: const Text('Todos los productos'),
+                            value: 'all',
+                            groupValue: _filterType,
+                            onChanged: (v) => setState(() => _filterType = v!),
+                          ),
+                          RadioListTile<String>(
+                            title: const Text('Productos con stock bajo'),
+                            value: 'low_stock',
+                            groupValue: _filterType,
+                            onChanged: (v) => setState(() => _filterType = v!),
+                          ),
+                          RadioListTile<String>(
+                            title: const Text('Productos con stock alto'),
+                            value: 'high_stock',
+                            groupValue: _filterType,
+                            onChanged: (v) => setState(() => _filterType = v!),
+                          ),
                         ],
                       ),
                     ),
                   ),
-                  
                   const SizedBox(height: 16),
                   
                   // Tipo de actualización
@@ -127,26 +88,32 @@ class _PriceUpdatePageState extends State<PriceUpdatePage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Tipo de Actualización', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Tipo de Actualización',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
                           const SizedBox(height: 12),
                           Row(
                             children: [
                               Expanded(
-                                child: RadioListTile<String>(
-                                  title: const Text('Porcentaje'),
-                                  subtitle: const Text('Ej: 10%'),
-                                  value: 'percentage',
-                                  groupValue: _updateType,
-                                  onChanged: (v) => setState(() => _updateType = v!),
+                                child: ElevatedButton(
+                                  onPressed: () => setState(() => _updateType = 'percentage'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: _updateType == 'percentage' ? Colors.blue : Colors.grey,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text('Porcentaje (%)'),
                                 ),
                               ),
+                              const SizedBox(width: 8),
                               Expanded(
-                                child: RadioListTile<String>(
-                                  title: const Text('Valor Fijo'),
-                                  subtitle: const Text('Ej: \$5.00'),
-                                  value: 'fixed',
-                                  groupValue: _updateType,
-                                  onChanged: (v) => setState(() => _updateType = v!),
+                                child: ElevatedButton(
+                                  onPressed: () => setState(() => _updateType = 'value'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: _updateType == 'value' ? Colors.blue : Colors.grey,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text('Valor Fijo (\$)'),
                                 ),
                               ),
                             ],
@@ -155,41 +122,41 @@ class _PriceUpdatePageState extends State<PriceUpdatePage> {
                       ),
                     ),
                   ),
-                  
                   const SizedBox(height: 16),
                   
-                  // Aumento o disminución
+                  // Aumento o Disminución
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Dirección', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Operación',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
                           const SizedBox(height: 12),
                           Row(
                             children: [
                               Expanded(
-                                child: ElevatedButton.icon(
+                                child: ElevatedButton(
                                   onPressed: () => setState(() => _increase = true),
-                                  icon: const Icon(Icons.trending_up),
-                                  label: const Text('Aumentar'),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: _increase ? Colors.green : Colors.grey,
                                     foregroundColor: Colors.white,
                                   ),
+                                  child: const Text('Aumentar'),
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 8),
                               Expanded(
-                                child: ElevatedButton.icon(
+                                child: ElevatedButton(
                                   onPressed: () => setState(() => _increase = false),
-                                  icon: const Icon(Icons.trending_down),
-                                  label: const Text('Disminuir'),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: !_increase ? Colors.red : Colors.grey,
                                     foregroundColor: Colors.white,
                                   ),
+                                  child: const Text('Disminuir'),
                                 ),
                               ),
                             ],
@@ -198,7 +165,6 @@ class _PriceUpdatePageState extends State<PriceUpdatePage> {
                       ),
                     ),
                   ),
-                  
                   const SizedBox(height: 16),
                   
                   // Valor
@@ -208,38 +174,43 @@ class _PriceUpdatePageState extends State<PriceUpdatePage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Valor', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Valor',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
                           const SizedBox(height: 12),
                           TextField(
                             controller: _valueController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: TextInputType.number,
                             decoration: InputDecoration(
                               labelText: _updateType == 'percentage' ? 'Porcentaje (%)' : 'Valor (\$)',
-                              prefixText: _updateType == 'percentage' ? '' : '\$',
+                              prefixText: _updateType == 'percentage' ? '' : '\$ ',
                               suffixText: _updateType == 'percentage' ? '%' : '',
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                               hintText: _updateType == 'percentage' ? 'Ej: 10' : 'Ej: 5.00',
+                              border: const OutlineInputBorder(),
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  
                   const SizedBox(height: 24),
                   
-                  // Botón confirmar
+                  // Botón Actualizar
                   SizedBox(
-                    height: 56,
-                    child: ElevatedButton(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
                       onPressed: _isLoading ? null : _updatePrices,
+                      icon: const Icon(Icons.update),
+                      label: const Text(
+                        'ACTUALIZAR PRECIOS',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
+                        backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,
                       ),
-                      child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('ACTUALIZAR PRECIOS', style: TextStyle(fontSize: 16)),
                     ),
                   ),
                 ],
@@ -248,12 +219,48 @@ class _PriceUpdatePageState extends State<PriceUpdatePage> {
     );
   }
 
-  String _getFilterLabelFor(String filter) {
-    switch (filter) {
-      case 'all': return 'Todos los productos';
-      case 'low_stock': return 'Productos con stock bajo';
-      case 'high_stock': return 'Productos con stock alto';
-      default: return 'Todos';
+  Future<void> _updatePrices() async {
+    final value = double.tryParse(_valueController.text);
+    if (value == null || value <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('❌ Ingresa un valor válido'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await _repository.updatePricesMassively(
+        filterType: _filterType,
+        updateType: _updateType,
+        value: value,
+        increase: _increase,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result ? '✅ Precios actualizados' : '❌ Error al actualizar'),
+            backgroundColor: result ? Colors.green : Colors.red,
+          ),
+        );
+        if (result) Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 }

@@ -104,3 +104,43 @@ class ProductRepository {
     }
   }
 }
+
+  Future<bool> updatePricesMassively({
+    required String filterType,
+    required String updateType,
+    required double value,
+    required bool increase,
+  }) async {
+    try {
+      final db = await database;
+      final productos = await getAllProductos();
+      
+      for (var producto in productos) {
+        double nuevoPrecio = producto['precio_venta'] as double;
+        
+        if (updateType == 'percentage') {
+          nuevoPrecio = increase 
+            ? nuevoPrecio * (1 + value / 100)
+            : nuevoPrecio * (1 - value / 100);
+        } else {
+          nuevoPrecio = increase
+            ? nuevoPrecio + value
+            : nuevoPrecio - value;
+        }
+        
+        if (nuevoPrecio < 0) nuevoPrecio = 0;
+        
+        await db.update(
+          'productos',
+          {'precio_venta': nuevoPrecio},
+          where: 'id = ?',
+          whereArgs: [producto['id']],
+        );
+      }
+      
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+}
