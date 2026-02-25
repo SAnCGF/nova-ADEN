@@ -89,7 +89,7 @@ class _HomePageState extends State<HomePage> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const PosPage()),
+            MaterialPageRoute(builder: (_) => const POSPage()),
           );
         },
         icon: const Icon(Icons.point_of_sale),
@@ -193,10 +193,10 @@ class _HomePageState extends State<HomePage> {
               title: 'Punto de Venta',
               icon: Icons.point_of_sale,
               color: Colors.green,
-              onTap: () {
+              onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const PosPage()),
+                  MaterialPageRoute(builder: (_) => const POSPage()),
                 );
               },
             ),
@@ -206,7 +206,7 @@ class _HomePageState extends State<HomePage> {
               title: 'Inventario',
               icon: Icons.inventory_2,
               color: Colors.blue,
-              onTap: () {
+              onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const ProductListPage()),
@@ -219,7 +219,7 @@ class _HomePageState extends State<HomePage> {
               title: 'Compras',
               icon: Icons.shopping_cart,
               color: Colors.orange,
-              onTap: () {
+              onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const PurchasePage()),
@@ -232,7 +232,7 @@ class _HomePageState extends State<HomePage> {
               title: 'Historial Ventas',
               icon: Icons.receipt_long,
               color: Colors.teal,
-              onTap: () {
+              onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const SalesListPage()),
@@ -245,7 +245,7 @@ class _HomePageState extends State<HomePage> {
               title: 'Reportes',
               icon: Icons.bar_chart,
               color: Colors.purple,
-              onTap: () {
+              onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const ReportsPage()),
@@ -258,7 +258,7 @@ class _HomePageState extends State<HomePage> {
               title: 'Configuración',
               icon: Icons.settings,
               color: Colors.grey,
-              onTap: () {
+              onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const SettingsPage()),
