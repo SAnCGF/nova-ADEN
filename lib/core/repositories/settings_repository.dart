@@ -141,15 +141,4 @@ class SettingsRepository {
       return {'totalBackups': 0, 'totalSize': 0.0};
     }
   }
-
-  Future<bool> updatePricesMassively({
-    required double porcentaje,
-    required bool esAumento,
-  }) async {
-    try {
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
 }

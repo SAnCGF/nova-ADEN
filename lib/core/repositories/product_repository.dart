@@ -1,109 +1,91 @@
-import 'package:nova_aden/core/models/product.dart';
-import 'package:nova_aden/core/database/database_helper.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
 
 class ProductRepository {
-  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  static Database? _database;
 
-  /// RF 1: Crear producto
-  Future<bool> createProduct(Product product) async {
-    try {
-      final existing = await _dbHelper.getProductByCode(product.code);
-      if (existing != null) return false;
-      await _dbHelper.createProduct(product);
-      return true;
-    } catch (e) {
-      return false;
-    }
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDatabase();
+    return _database!;
   }
 
-  /// RF 2: Editar producto
-  Future<bool> updateProduct(Product product) async {
-    try {
-      if (product.id == null) return false;
-      final updated = await _dbHelper.updateProduct(product);
-      return updated > 0;
-    } catch (e) {
-      return false;
-    }
+  Future<Database> _initDatabase() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'nova_aden.db');
+
+    return await openDatabase(
+      path,
+      version: 3,
+      onCreate: _onCreate,
+    );
   }
 
-  /// RF 3: Eliminar producto
-  Future<bool> deleteProduct(int id) async {
-    try {
-      final deleted = await _dbHelper.deleteProduct(id);
-      return deleted > 0;
-    } catch (e) {
-      return false;
-    }
+  Future<void> _onCreate(Database db, int version) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS productos(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL,
+        descripcion TEXT,
+        precio_compra REAL NOT NULL,
+        precio_venta REAL NOT NULL,
+        stock REAL DEFAULT 0,
+        stock_minimo REAL DEFAULT 5,
+        categoria TEXT,
+        codigo_barras TEXT,
+        unidad_medida TEXT DEFAULT 'UNIDAD',
+        activo INTEGER DEFAULT 1,
+        fecha_creacion TEXT
+      )
+    ''');
   }
 
-  /// RF 4: Buscar productos
-  Future<List<Product>> searchProducts(String query) async {
-    try {
-      if (query.isEmpty) return await _dbHelper.getAllProducts();
-      return await _dbHelper.searchProducts(query);
-    } catch (e) {
-      return [];
-    }
+  Future<List<Map<String, dynamic>>> getAllProductos() async {
+    final db = await database;
+    return await db.query('productos', where: 'activo = ?', whereArgs: [1]);
   }
 
-  /// RF 5: Productos con stock bajo
-  Future<List<Product>> getLowStockProducts() async {
-    try {
-      return await _dbHelper.getLowStockProducts();
-    } catch (e) {
-      return [];
-    }
+  Future<Map<String, dynamic>?> getProductoById(int id) async {
+    final db = await database;
+    final maps = await db.query('productos', where: 'id = ?', whereArgs: [id]);
+    return maps.isNotEmpty ? maps.first : null;
   }
 
-  /// Obtener todos los productos
-  Future<List<Product>> getAllProducts() async {
-    try {
-      return await _dbHelper.getAllProducts();
-    } catch (e) {
-      return [];
-    }
+  Future<int> createProducto(Map<String, dynamic> producto) async {
+    final db = await database;
+    return await db.insert('productos', producto);
   }
 
-  /// Obtener producto por ID
-  Future<Product?> getProductById(int id) async {
-    try {
-      return await _dbHelper.getProductById(id);
-    } catch (e) {
-      return null;
-    }
+  Future<bool> updateProducto(int id, Map<String, dynamic> producto) async {
+    final db = await database;
+    final result = await db.update('productos', producto, where: 'id = ?', whereArgs: [id]);
+    return result > 0;
   }
 
-  /// Obtener producto por código (MÉTODO FALTANTE - AGREGADO)
-  Future<Product?> getProductByCode(String code) async {
-    try {
-      return await _dbHelper.getProductByCode(code);
-    } catch (e) {
-      return null;
-    }
+  Future<bool> deleteProducto(int id) async {
+    final db = await database;
+    final result = await db.update('productos', {'activo': 0}, where: 'id = ?', whereArgs: [id]);
+    return result > 0;
   }
 
-  /// Actualizar stock
-  Future<bool> updateStock(int id, int newStock) async {
-    try {
-      final updated = await _dbHelper.updateStock(id, newStock);
-      return updated > 0;
-    } catch (e) {
-      return false;
-    }
-  }
+  Future<bool> updateStock(int id, double cantidad, bool esEntrada) async {
+    final db = await database;
+    final producto = await getProductoById(id);
+    if (producto == null) return false;
 
-  /// Estadísticas rápidas
-  Future<Map<String, int>> getStats() async {
-    try {
-      final total = await _dbHelper.getProductCount();
-      final lowStock = await _dbHelper.getLowStockCount();
-      return {'total': total, 'lowStock': lowStock};
-    } catch (e) {
-      return {'total': 0, 'lowStock': 0};
-    }
+    final stockActual = producto['stock'] as double;
+    final nuevoStock = esEntrada ? stockActual + cantidad : stockActual - cantidad;
+
+    if (nuevoStock < 0) return false;
+
+    final result = await db.update(
+      'productos',
+      {'stock': nuevoStock},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    return result > 0;
   }
-}
 
   Future<bool> updatePricesMassively({
     required String filterType,
