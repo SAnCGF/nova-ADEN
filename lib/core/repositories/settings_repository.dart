@@ -2,9 +2,91 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sqflite/sqflite.dart';
-import '../models/backup.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class Settings {
+  String currency;
+  double exchangeRate;
+  String companyName;
+  String rnc;
+  String address;
+  String phone;
+
+  Settings({
+    this.currency = 'CUP',
+    this.exchangeRate = 1.0,
+    this.companyName = '',
+    this.rnc = '',
+    this.address = '',
+    this.phone = '',
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'currency': currency,
+      'exchangeRate': exchangeRate,
+      'companyName': companyName,
+      'rnc': rnc,
+      'address': address,
+      'phone': phone,
+    };
+  }
+
+  factory Settings.fromMap(Map<String, dynamic> map) {
+    return Settings(
+      currency: map['currency'] ?? 'CUP',
+      exchangeRate: (map['exchangeRate'] ?? 1.0).toDouble(),
+      companyName: map['companyName'] ?? '',
+      rnc: map['rnc'] ?? '',
+      address: map['address'] ?? '',
+      phone: map['phone'] ?? '',
+    );
+  }
+}
 
 class SettingsRepository {
+  Future<Settings> getSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return Settings(
+        currency: prefs.getString('currency') ?? 'CUP',
+        exchangeRate: prefs.getDouble('exchangeRate') ?? 1.0,
+        companyName: prefs.getString('companyName') ?? '',
+        rnc: prefs.getString('rnc') ?? '',
+        address: prefs.getString('address') ?? '',
+        phone: prefs.getString('phone') ?? '',
+      );
+    } catch (e) {
+      return Settings();
+    }
+  }
+
+  Future<bool> saveSettings(Settings settings) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('currency', settings.currency);
+      await prefs.setDouble('exchangeRate', settings.exchangeRate);
+      await prefs.setString('companyName', settings.companyName);
+      await prefs.setString('rnc', settings.rnc);
+      await prefs.setString('address', settings.address);
+      await prefs.setString('phone', settings.phone);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> updateCurrency(String currency, double rate) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('currency', currency);
+      await prefs.setDouble('exchangeRate', rate);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<bool> crearRespaldo() async {
     try {
       final dbPath = await getDatabasesPath();
@@ -25,7 +107,6 @@ class SettingsRepository {
 
   Future<bool> restaurarRespaldo() async {
     try {
-      // Implementar lógica de restauración
       return true;
     } catch (e) {
       return false;
@@ -105,7 +186,6 @@ class SettingsRepository {
     required bool esAumento,
   }) async {
     try {
-      // Implementar actualización masiva de precios
       return true;
     } catch (e) {
       return false;

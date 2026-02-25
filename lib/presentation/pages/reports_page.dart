@@ -65,7 +65,7 @@ class _ReportsPageState extends State<ReportsPage> {
               subtitle: 'Por producto',
               icon: Icons.swap_horiz,
               color: Colors.teal,
-              page: const ProductMovementsPage(),
+              page: const ReportsPage(),
             ),
             _buildReportCard(
               context,
