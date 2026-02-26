@@ -5,6 +5,9 @@ class AppSettings {
   String rnc;
   String address;
   String phone;
+  bool showCostInReports;
+  bool allowNegativeStock;
+  int lowStockThreshold;
 
   AppSettings({
     this.currency = 'CUP',
@@ -13,6 +16,9 @@ class AppSettings {
     this.rnc = '',
     this.address = '',
     this.phone = '',
+    this.showCostInReports = true,
+    this.allowNegativeStock = false,
+    this.lowStockThreshold = 5,
   });
 
   Map<String, dynamic> toMap() {
@@ -23,6 +29,9 @@ class AppSettings {
       'rnc': rnc,
       'address': address,
       'phone': phone,
+      'showCostInReports': showCostInReports,
+      'allowNegativeStock': allowNegativeStock,
+      'lowStockThreshold': lowStockThreshold,
     };
   }
 
@@ -34,6 +43,9 @@ class AppSettings {
       rnc: map['rnc'] ?? '',
       address: map['address'] ?? '',
       phone: map['phone'] ?? '',
+      showCostInReports: map['showCostInReports'] ?? true,
+      allowNegativeStock: map['allowNegativeStock'] ?? false,
+      lowStockThreshold: map['lowStockThreshold'] ?? 5,
     );
   }
 }

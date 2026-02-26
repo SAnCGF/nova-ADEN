@@ -16,6 +16,9 @@ class SettingsRepository {
         rnc: prefs.getString('rnc') ?? '',
         address: prefs.getString('address') ?? '',
         phone: prefs.getString('phone') ?? '',
+        showCostInReports: prefs.getBool('showCostInReports') ?? true,
+        allowNegativeStock: prefs.getBool('allowNegativeStock') ?? false,
+        lowStockThreshold: prefs.getInt('lowStockThreshold') ?? 5,
       );
     } catch (e) {
       return AppSettings();
@@ -31,6 +34,9 @@ class SettingsRepository {
       await prefs.setString('rnc', settings.rnc);
       await prefs.setString('address', settings.address);
       await prefs.setString('phone', settings.phone);
+      await prefs.setBool('showCostInReports', settings.showCostInReports);
+      await prefs.setBool('allowNegativeStock', settings.allowNegativeStock);
+      await prefs.setInt('lowStockThreshold', settings.lowStockThreshold);
       return true;
     } catch (e) {
       return false;

@@ -45,15 +45,48 @@ class ProductRepository {
     return await db.query('productos', where: 'activo = ?', whereArgs: [1]);
   }
 
+  Future<List<Map<String, dynamic>>> getAllProducts() async {
+    return getAllProductos();
+  }
+
   Future<Map<String, dynamic>?> getProductoById(int id) async {
     final db = await database;
     final maps = await db.query('productos', where: 'id = ?', whereArgs: [id]);
     return maps.isNotEmpty ? maps.first : null;
   }
 
+  Future<Map<String, dynamic>?> getProductById(int id) async {
+    return getProductoById(id);
+  }
+
+  Future<Map<String, dynamic>?> getProductByCode(String code) async {
+    final db = await database;
+    final maps = await db.query('productos', 
+      where: 'codigo_barras = ? AND activo = ?', 
+      whereArgs: [code, 1]);
+    return maps.isNotEmpty ? maps.first : null;
+  }
+
+  Future<List<Map<String, dynamic>>> getLowStockProducts() async {
+    final db = await database;
+    return await db.query('productos', 
+      where: 'stock <= stock_minimo AND activo = ?');
+  }
+
+  Future<List<Map<String, dynamic>>> searchProducts(String query) async {
+    final db = await database;
+    return await db.query('productos',
+      where: '(nombre LIKE ? OR codigo_barras LIKE ?) AND activo = ?',
+      whereArgs: ['%$query%', '%$query%', 1]);
+  }
+
   Future<int> createProducto(Map<String, dynamic> producto) async {
     final db = await database;
     return await db.insert('productos', producto);
+  }
+
+  Future<int> createProduct(Map<String, dynamic> product) async {
+    return createProducto(product);
   }
 
   Future<bool> updateProducto(int id, Map<String, dynamic> producto) async {
@@ -62,27 +95,29 @@ class ProductRepository {
     return result > 0;
   }
 
+  Future<bool> updateProduct(int id, Map<String, dynamic> product) async {
+    return updateProducto(id, product);
+  }
+
   Future<bool> deleteProducto(int id) async {
     final db = await database;
     final result = await db.update('productos', {'activo': 0}, where: 'id = ?', whereArgs: [id]);
     return result > 0;
   }
 
-  Future<bool> updateStock(int id, double cantidad, bool esEntrada) async {
+  Future<bool> deleteProduct(int id) async {
+    return deleteProducto(id);
+  }
+
+  Future<bool> updateStock(int productId, double newStock, bool allowNegative) async {
     final db = await database;
-    final producto = await getProductoById(id);
-    if (producto == null) return false;
-
-    final stockActual = producto['stock'] as double;
-    final nuevoStock = esEntrada ? stockActual + cantidad : stockActual - cantidad;
-
-    if (nuevoStock < 0) return false;
-
+    if (!allowNegative && newStock < 0) return false;
+    
     final result = await db.update(
       'productos',
-      {'stock': nuevoStock},
+      {'stock': newStock},
       where: 'id = ?',
-      whereArgs: [id],
+      whereArgs: [productId],
     );
     return result > 0;
   }
