@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nova_aden/core/repositories/product_repository.dart';
 import 'package:nova_aden/core/models/product.dart';
+import 'package:nova_aden/core/models/cart_item.dart';
 import 'cart_page.dart';
 
 class POSPage extends StatefulWidget {
@@ -72,7 +73,6 @@ class _POSPageState extends State<POSPage> {
       ),
     );
 
-    // Si se completó la venta (result == true), limpiar carrito y recargar
     if (result == true) {
       setState(() {
         _cart.clear();
@@ -121,7 +121,6 @@ class _POSPageState extends State<POSPage> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // Barra de búsqueda
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: TextField(
@@ -138,7 +137,6 @@ class _POSPageState extends State<POSPage> {
                     onChanged: (value) => setState(() => _searchQuery = value),
                   ),
                 ),
-                // Grid de productos
                 Expanded(
                   child: _filteredProducts.isEmpty
                       ? Center(
@@ -160,13 +158,6 @@ class _POSPageState extends State<POSPage> {
                                   color: Colors.grey[600],
                                 ),
                               ),
-                              if (_products.isEmpty) ...[
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Registra productos desde el menú',
-                                  style: TextStyle(color: Colors.grey[500]),
-                                ),
-                              ],
                             ],
                           ),
                         )
@@ -245,14 +236,9 @@ class _POSPageState extends State<POSPage> {
                 ? const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF1E3A5F),
-                      Color(0xFF2D5A87),
-                    ],
+                    colors: [Color(0xFF1E3A5F), Color(0xFF2D5A87)],
                   )
-                : LinearGradient(
-                    colors: [Colors.grey[300]!, Colors.grey[400]!],
-                  ),
+                : LinearGradient(colors: [Colors.grey[300]!, Colors.grey[400]!]),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -263,11 +249,7 @@ class _POSPageState extends State<POSPage> {
                   color: Colors.white.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  Icons.inventory_2,
-                  size: 48,
-                  color: Colors.white,
-                ),
+                child: Icon(Icons.inventory_2, size: 48, color: Colors.white),
               ),
               const SizedBox(height: 12),
               Padding(
@@ -309,27 +291,10 @@ class _POSPageState extends State<POSPage> {
                   ),
                 ),
               ),
-              if (hasStock) ...[
-                const SizedBox(height: 8),
-                const Text(
-                  'Toca para agregar',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
             ],
           ),
         ),
       ),
     );
   }
-}
-
-class CartItem {
-  final Product product;
-  int quantity;
-
-  CartItem({required this.product, required this.quantity});
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nova_aden/core/repositories/sale_repository.dart';
 import 'package:nova_aden/core/models/product.dart';
+import 'package:nova_aden/core/models/cart_item.dart';
 
 class CartPage extends StatefulWidget {
   final List<CartItem> cart;
@@ -104,7 +105,7 @@ class _CartPageState extends State<CartPage> {
       if (mounted) {
         if (saleId > 0) {
           _showSnackBar('✅ Venta registrada exitosamente', Colors.green);
-          Navigator.of(context).pop(true); // Retorna true para indicar venta completada
+          Navigator.of(context).pop(true);
         } else {
           _showSnackBar('❌ Error al registrar la venta', Colors.red);
         }
@@ -142,38 +143,6 @@ class _CartPageState extends State<CartPage> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(false),
         ),
-        actions: [
-          if (widget.cart.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.delete_sweep),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('Limpiar Carrito'),
-                    content: const Text('¿Está seguro de eliminar todos los productos?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(),
-                        child: const Text('Cancelar'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          setState(() => widget.cart.clear());
-                          Navigator.of(ctx).pop();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text('Eliminar'),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-        ],
       ),
       body: widget.cart.isEmpty
           ? const Center(
@@ -182,21 +151,14 @@ class _CartPageState extends State<CartPage> {
                 children: [
                   Icon(Icons.shopping_cart_outlined, size: 100, color: Colors.grey),
                   SizedBox(height: 16),
-                  Text(
-                    'Carrito vacío',
-                    style: TextStyle(fontSize: 20, color: Colors.grey),
-                  ),
+                  Text('Carrito vacío', style: TextStyle(fontSize: 20, color: Colors.grey)),
                   SizedBox(height: 8),
-                  Text(
-                    'Agrega productos desde el POS',
-                    style: TextStyle(color: Colors.grey),
-                  ),
+                  Text('Agrega productos desde el POS', style: TextStyle(color: Colors.grey)),
                 ],
               ),
             )
           : Column(
               children: [
-                // Lista de productos
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
@@ -216,10 +178,7 @@ class _CartPageState extends State<CartPage> {
                                   color: const Color(0xFF1E3A5F).withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Icon(
-                                  Icons.inventory_2,
-                                  color: Color(0xFF1E3A5F),
-                                ),
+                                child: const Icon(Icons.inventory_2, color: Color(0xFF1E3A5F)),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -228,10 +187,7 @@ class _CartPageState extends State<CartPage> {
                                   children: [
                                     Text(
                                       item.product.nombre,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -259,10 +215,7 @@ class _CartPageState extends State<CartPage> {
                                         child: Text(
                                           '${item.quantity}',
                                           textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 18,
-                                          ),
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                                         ),
                                       ),
                                       IconButton(
@@ -295,7 +248,6 @@ class _CartPageState extends State<CartPage> {
                     },
                   ),
                 ),
-                // Total y botón
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -373,11 +325,4 @@ class _CartPageState extends State<CartPage> {
             ),
     );
   }
-}
-
-class CartItem {
-  final Product product;
-  int quantity;
-
-  CartItem({required this.product, required this.quantity});
 }

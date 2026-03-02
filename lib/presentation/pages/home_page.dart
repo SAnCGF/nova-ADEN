@@ -32,7 +32,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _cargarDatos() {
-    // Cargar datos reales cuando estén disponibles
     setState(() {
       _totalProductos = context.read<ProductoBloc>().productos.length;
     });
@@ -45,249 +44,125 @@ class _HomePageState extends State<HomePage> {
         title: const Text(AppConstants.appName),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              context.read<ProductoBloc>().cargarProductos();
-              _cargarDatos();
-            },
-            tooltip: 'Actualizar',
-          ),
+          // ✅ Botón de configuración SOLO en AppBar
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () => Navigator.push(
-              context,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SettingsPage()),
             ),
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await context.read<ProductoBloc>().cargarProductos();
-          _cargarDatos();
-        },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildWelcomeHeader(),
-              const SizedBox(height: 24),
-              _buildDashboardSection(),
-              const SizedBox(height: 24),
-              _buildModulesSection(),
-              const SizedBox(height: 24),
-              _buildFooter(),
-            ],
-          ),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const POSPage()),
-          );
-        },
-        icon: const Icon(Icons.point_of_sale),
-        label: const Text('Nueva Venta'),
-        backgroundColor: Theme.of(context).primaryColor,
-      ),
-    );
-  }
-
-  Widget _buildWelcomeHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '¡Bienvenido!',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          AppConstants.appDescription,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDashboardSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Resumen del Día',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 1.5,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DashboardCard(
-              title: 'Productos',
-              value: '$_totalProductos',
-              icon: Icons.inventory_2_outlined,
-              color: Colors.blue,
+            // Dashboard de métricas
+            Row(
+              children: [
+                Expanded(
+                  child: DashboardCard(
+                    title: 'Productos',
+                    value: '$_totalProductos',
+                    icon: Icons.inventory_2,
+                    color: const Color(0xFF1E3A5F),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DashboardCard(
+                    title: 'Ventas Hoy',
+                    value: '$_ventasHoy',
+                    icon: Icons.shopping_cart,
+                    color: const Color(0xFF22C55E),
+                  ),
+                ),
+              ],
             ),
-            DashboardCard(
-              title: 'Ventas Hoy',
-              value: '$_ventasHoy',
-              icon: Icons.point_of_sale_outlined,
-              color: Colors.green,
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: DashboardCard(
+                    title: 'Alertas Stock',
+                    value: '$_alertasStock',
+                    icon: Icons.warning_amber,
+                    color: const Color(0xFFF59E0B),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DashboardCard(
+                    title: 'Ingresos',
+                    value: '\$$_ingresosDia',
+                    icon: Icons.attach_money,
+                    color: const Color(0xFF3B82F6),
+                  ),
+                ),
+              ],
             ),
-            DashboardCard(
-              title: 'Alertas Stock',
-              value: '$_alertasStock',
-              icon: Icons.warning_amber_outlined,
-              color: Colors.orange,
+            const SizedBox(height: 24),
+            
+            // Módulo de botones - ✅ SIN botón de configuración aquí
+            const Text(
+              'Módulos',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            DashboardCard(
-              title: 'Ingresos',
-              value: '\$${_ingresosDia.toStringAsFixed(2)}',
-              icon: Icons.attach_money,
-              color: Colors.purple,
+            const SizedBox(height: 16),
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.2,
+              children: [
+                ModuleButton(
+                  title: 'Productos',
+                  icon: Icons.inventory_2,
+                  color: const Color(0xFF1E3A5F),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ProductListPage()),
+                  ),
+                ),
+                ModuleButton(
+                  title: 'Punto de Venta',
+                  icon: Icons.point_of_sale,
+                  color: const Color(0xFF22C55E),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const POSPage()),
+                  ),
+                ),
+                ModuleButton(
+                  title: 'Compras',
+                  icon: Icons.shopping_bag,
+                  color: const Color(0xFF8B5CF6),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const PurchasePage()),
+                  ),
+                ),
+                ModuleButton(
+                  title: 'Ventas',
+                  icon: Icons.receipt_long,
+                  color: const Color(0xFF3B82F6),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SalesListPage()),
+                  ),
+                ),
+                ModuleButton(
+                  title: 'Reportes',
+                  icon: Icons.bar_chart,
+                  color: const Color(0xFFF59E0B),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ReportsPage()),
+                  ),
+                ),
+                // ✅ Configuración REMOVIDA de aquí - solo está en AppBar
+              ],
             ),
           ],
         ),
-      ],
-    );
-  }
-
-  Widget _buildModulesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Módulos',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1,
-          children: [
-            // Módulo Punto de Venta (NUEVO)
-            ModuleButton(
-              title: 'Punto de Venta',
-              icon: Icons.point_of_sale,
-              color: Colors.green,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const POSPage()),
-                );
-              },
-            ),
-            
-            // Módulo Inventario
-            ModuleButton(
-              title: 'Inventario',
-              icon: Icons.inventory_2,
-              color: Colors.blue,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ProductListPage()),
-                );
-              },
-            ),
-            
-            // Módulo Compras
-            ModuleButton(
-              title: 'Compras',
-              icon: Icons.shopping_cart,
-              color: Colors.orange,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const PurchasePage()),
-                );
-              },
-            ),
-            
-            // Módulo Ventas (Historial)
-            ModuleButton(
-              title: 'Historial Ventas',
-              icon: Icons.receipt_long,
-              color: Colors.teal,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SalesListPage()),
-                );
-              },
-            ),
-            
-            // Módulo Reportes
-            ModuleButton(
-              title: 'Reportes',
-              icon: Icons.bar_chart,
-              color: Colors.purple,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ReportsPage()),
-                );
-              },
-            ),
-            
-            ModuleButton(
-              icon: Icons.settings,
-              color: Colors.grey,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                );
-              },
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFooter() {
-    return Center(
-      child: Column(
-        children: [
-          const Divider(),
-          Text(
-            AppConstants.appVersion,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(height: 32),
-        ],
-      ),
-    );
-  }
-
-  void _showComingSoon(String modulo) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$modulo próximamente'),
-        duration: const Duration(seconds: 2),
       ),
     );
   }
