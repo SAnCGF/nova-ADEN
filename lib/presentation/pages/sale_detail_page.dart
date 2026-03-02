@@ -12,7 +12,7 @@ class SaleDetailPage extends StatefulWidget {
 
 class _SaleDetailPageState extends State<SaleDetailPage> {
   final SaleRepository _repository = SaleRepository();
-  Map<String, dynamic>? _saleData;
+  List<Map<String, dynamic>>? _saleData;
   bool _isLoading = true;
 
   @override
@@ -40,8 +40,8 @@ class _SaleDetailPageState extends State<SaleDetailPage> {
       );
     }
 
-    final sale = _saleData!['sale'];
-    final items = _saleData!['items'] as List;
+    final sale = _saleData!.isNotEmpty ? _saleData!.first : null;
+    final items = _saleData!;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Detalle de Venta')),
@@ -59,23 +59,23 @@ class _SaleDetailPageState extends State<SaleDetailPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Número: ${sale.saleNumber}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text('Número: ${sale!['numero_venta']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                           decoration: BoxDecoration(
-                            color: sale.status == 'completed' ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                            color: sale!['estado'] == 'completed' ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            sale.status == 'completed' ? 'Completada' : 'Pendiente',
-                            style: TextStyle(color: sale.status == 'completed' ? Colors.green : Colors.orange, fontWeight: FontWeight.w600),
+                            sale!['estado'] == 'completed' ? 'Completada' : 'Pendiente',
+                            style: TextStyle(color: sale!['estado'] == 'completed' ? Colors.green : Colors.orange, fontWeight: FontWeight.w600),
                           ),
                         ),
                       ],
                     ),
                     const Divider(),
-                    _buildInfoRow('Fecha', DateFormat('dd/MM/yyyy HH:mm').format(sale.date)),
-                    if (sale.customerName != null) _buildInfoRow('Cliente', sale.customerName),
+                    _buildInfoRow('Fecha', DateFormat('dd/MM/yyyy HH:mm').format(sale!['fecha'])),
+                    if (sale!['cliente'] != null) _buildInfoRow('Cliente', sale!['cliente']),
                   ],
                 ),
               ),
@@ -112,13 +112,13 @@ class _SaleDetailPageState extends State<SaleDetailPage> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    _buildTotalRow('Subtotal', sale.subtotal),
-                    if (sale.discount > 0) _buildTotalRow('Descuento', -sale.discount, isNegative: true),
+                    _buildTotalRow('Subtotal', sale!['subtotal']),
+                    if (sale!['descuento'] > 0) _buildTotalRow('Descuento', -sale!['descuento'], isNegative: true),
                     const Divider(),
-                    _buildTotalRow('TOTAL', sale.total, isTotal: true),
+                    _buildTotalRow('TOTAL', sale!['total'], isTotal: true),
                     const Divider(),
-                    _buildTotalRow('Pagado', sale.paid),
-                    _buildTotalRow('Cambio', sale.change),
+                    _buildTotalRow('Pagado', sale!['pago_parcial']),
+                    _buildTotalRow('Cambio', sale!['cambio']),
                   ],
                 ),
               ),

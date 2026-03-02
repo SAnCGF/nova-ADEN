@@ -13,8 +13,8 @@ class LossHistoryPage extends StatefulWidget {
 
 class _LossHistoryPageState extends State<LossHistoryPage> {
   final InventoryRepository _repository = InventoryRepository();
-  List<InventoryLoss> _losses = [];
-  List<LossReason> _reasons = [];
+  List<Map<String, dynamic>> _losses = [];
+  List<Map<String, dynamic>> _reasons = [];
   String? _selectedReason;
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime _endDate = DateTime.now();
@@ -30,11 +30,11 @@ class _LossHistoryPageState extends State<LossHistoryPage> {
     setState(() => _isLoading = true);
     await _repository.initializeReasons();
     _reasons = await _repository.getLossReasons();
-    _losses = await _repository.getLosses(startDate: _startDate, endDate: _endDate, reasonId: _selectedReason);
+    _losses = await _repository.getLosses();
     setState(() => _isLoading = false);
   }
 
-  double get _totalValue => _losses.fold<double>(0, (sum, l) => sum + l.totalValue);
+  double get _totalValue => _losses.fold<double>(0, (sum, l) => sum + l['total_value']);
 
   @override
   Widget build(BuildContext context) {
@@ -78,20 +78,20 @@ class _LossHistoryPageState extends State<LossHistoryPage> {
                             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             child: ListTile(
                               leading: const CircleAvatar(backgroundColor: Colors.red, child: Icon(Icons.warning_amber, color: Colors.white, size: 20)),
-                              title: Text(loss.productName),
+                              title: Text(loss['product_name']),
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(DateFormat('dd/MM/yyyy').format(loss.date)),
-                                  Text('Motivo: ${loss.reasonName}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                                  Text(DateFormat('dd/MM/yyyy').format(loss['date'])),
+                                  Text('Motivo: ${loss['reason_name']}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                                 ],
                               ),
                               trailing: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text('${loss.quantity} und', style: const TextStyle(fontWeight: FontWeight.w600)),
-                                  Text('-\$${loss.totalValue.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                                  Text('${loss['quantity']} und', style: const TextStyle(fontWeight: FontWeight.w600)),
+                                  Text('-\$${loss['total_value'].toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
                                 ],
                               ),
                             ),
@@ -115,7 +115,7 @@ class _LossHistoryPageState extends State<LossHistoryPage> {
             const Text('Motivo:'),
             Wrap(
               children: [
-                Chip(
+                ActionChip(
                   label: const Text('Todos'),
                   backgroundColor: _selectedReason == null ? Colors.blue : Colors.grey,
                   labelStyle: TextStyle(color: _selectedReason == null ? Colors.white : Colors.black),
@@ -125,12 +125,12 @@ class _LossHistoryPageState extends State<LossHistoryPage> {
                     _loadData();
                   },
                 ),
-                ..._reasons.map((r) => Chip(
-                  label: Text(r.name),
-                  backgroundColor: _selectedReason == r.id ? Colors.blue : Colors.grey,
-                  labelStyle: TextStyle(color: _selectedReason == r.id ? Colors.white : Colors.black),
+                ..._reasons.map((r) => ActionChip(
+                  label: Text(r['name']),
+                  backgroundColor: _selectedReason == r['id'] ? Colors.blue : Colors.grey,
+                  labelStyle: TextStyle(color: _selectedReason == r['id'] ? Colors.white : Colors.black),
                   onPressed: () {
-                    setState(() => _selectedReason = r.id);
+                    setState(() => _selectedReason = r['id']);
                     Navigator.pop(ctx);
                     _loadData();
                   },

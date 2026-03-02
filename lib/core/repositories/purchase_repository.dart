@@ -1,138 +1,82 @@
-import 'package:nova_aden/core/models/purchase.dart';
-import 'package:nova_aden/core/models/purchase_item.dart';
-import 'package:nova_aden/core/models/supplier.dart';
-import 'package:nova_aden/core/database/database_helper.dart';
-import 'package:nova_aden/core/repositories/product_repository.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+import 'product_repository.dart';
 
 class PurchaseRepository {
-  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   final ProductRepository _productRepo = ProductRepository();
+  static Database? _database;
 
-  /// RF 7: Registrar proveedor
-  Future<bool> createSupplier(Supplier supplier) async {
-    try {
-      await _dbHelper.createSupplier(supplier);
-      return true;
-    } catch (e) {
-      return false;
-    }
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDatabase();
+    return _database!;
   }
 
-  /// Obtener todos los proveedores
-  Future<List<Supplier>> getAllSuppliers() async {
-    try {
-      return await _dbHelper.getAllSuppliers();
-    } catch (e) {
-      return [];
-    }
+  Future<Database> _initDatabase() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'nova_aden.db');
+    return await openDatabase(path, version: 3, onCreate: _onCreate);
   }
 
-  /// RF 6, 7, 8, 9, 10: Registrar compra completa
-  Future<bool> registerPurchase({
-    required List<PurchaseItem> items,
-    int? supplierId,
-    String? supplierName,
-    bool isQuickPurchase = false,
-  }) async {
-    try {
-      if (items.isEmpty) return false;
+  Future<void> _onCreate(Database db, int version) async {
+    await db.execute('''CREATE TABLE IF NOT EXISTS compras(id INTEGER PRIMARY KEY AUTOINCREMENT, numero_compra TEXT, fecha TEXT, proveedor TEXT, total REAL, estado INTEGER DEFAULT 1)''');
+    await db.execute('''CREATE TABLE IF NOT EXISTS detalle_compras(id INTEGER PRIMARY KEY AUTOINCREMENT, compra_id INTEGER, producto_id INTEGER, cantidad REAL, precio_unitario REAL, subtotal REAL)''');
+    await db.execute('''CREATE TABLE IF NOT EXISTS proveedores(id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, rnc TEXT, telefono TEXT, email TEXT, direccion TEXT, activo INTEGER DEFAULT 1)''');
+  }
 
-      // Calcular totales
-      final subtotal = items.fold<double>(0, (sum, item) => sum + item.subtotal);
-      final total = subtotal; // Sin impuestos por ahora
-
-      // Generar número de compra único
-      final purchaseNumber = 'CMP-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}';
-
-      // Crear compra
-      final purchase = Purchase(
-        purchaseNumber: purchaseNumber,
-        date: DateTime.now(),
-        supplierId: isQuickPurchase ? null : supplierId,
-        supplierName: isQuickPurchase ? 'Compra Rápida' : supplierName,
-        subtotal: subtotal,
-        total: total,
-        status: 'completed',
-      );
-
-      // Actualizar stock y costo promedio ponderado (CPP)
-      for (final item in items) {
-        final product = await _productRepo.getProductById(item.productId);
-        if (product != null) {
-          final newStock = product.stock + item.quantity;
-          // Fórmula CPP: ((costo_actual * stock_actual) + (costo_compra * cantidad_compra)) / nuevo_stock
-          final newAvgCost = ((product.cost * product.stock) + (item.unitCost * item.quantity)) / newStock;
-          await _productRepo.updateStock(item.productId, newStock);
-          
-          // Actualizar costo del producto
-          final db = await _dbHelper.database;
-          await db.update(
-            'products',
-            {'cost': newAvgCost, 'updated_at': DateTime.now().toIso8601String()},
-            where: 'id = ?',
-            whereArgs: [item.productId],
-          );
+  Future<int> registerPurchase(Map<String, dynamic> purchase, List<Map<String, dynamic>> items) async {
+    final db = await database;
+    int id = 0;
+    await db.transaction((txn) async {
+      id = await txn.insert('compras', purchase);
+      for (var item in items) {
+        item['compra_id'] = id;
+        await txn.insert('detalle_compras', item);
+        final p = await _productRepo.getProductById(item['producto_id']);
+        if (p != null) {
+          final newStock = p.stockActual + ((item['cantidad'] ?? 0) as num).toInt();
+          await _productRepo.updateStock(item['producto_id'], newStock, true);
         }
       }
-
-      // Guardar compra con ítems
-      return await _dbHelper.createPurchaseWithItems(purchase, items, updateStock: false);
-    } catch (e) {
-      print('Error en registerPurchase: $e');
-      return false;
-    }
+    });
+    return id;
   }
 
-  /// RF 11: Listar compras por fecha
-  Future<List<Purchase>> getPurchasesByDateRange(DateTime start, DateTime end) async {
+  Future<List<Map<String, dynamic>>> getAllPurchases() async {
     try {
-      return await _dbHelper.getPurchasesByDateRange(start, end);
+      final db = await database;
+      return await db.query('compras', orderBy: 'fecha DESC');
     } catch (e) {
       return [];
     }
   }
 
-  /// Obtener compras del día
-  Future<List<Purchase>> getTodayPurchases() async {
-    final now = DateTime.now();
-    final start = DateTime(now.year, now.month, now.day);
-    final end = start.add(const Duration(days: 1));
-    return await getPurchasesByDateRange(start, end);
-  }
-
-  /// Obtener detalle de compra
-  Future<Map<String, dynamic>?> getPurchaseDetail(int purchaseId) async {
+  Future<List<Map<String, dynamic>>> getTodayPurchases() async {
     try {
-      final db = await _dbHelper.database;
-      final purchaseResults = await db.query(
-        'purchases',
-        where: 'id = ?',
-        whereArgs: [purchaseId],
-        limit: 1,
-      );
-      if (purchaseResults.isEmpty) return null;
-      
-      final purchase = Purchase.fromMap(purchaseResults.first);
-      final items = await _dbHelper.getPurchaseItems(purchaseId);
-      
-      return {'purchase': purchase, 'items': items};
+      final db = await database;
+      final now = DateTime.now();
+      final start = DateTime(now.year, now.month, now.day);
+      return await db.query('compras', where: 'fecha >= ?', whereArgs: [start.toIso8601String()]);
     } catch (e) {
-      return null;
+      return [];
     }
   }
 
-  /// Estadísticas de compras
-  Future<Map<String, dynamic>> getStats() async {
+  Future<List<Map<String, dynamic>>> getPurchasesByDateRange(DateTime start, DateTime end) async {
     try {
-      final db = await _dbHelper.database;
-      final count = await db.rawQuery('SELECT COUNT(*) FROM purchases');
-      final total = await db.rawQuery('SELECT SUM(total) FROM purchases');
-      return {
-        'count': count.first.values.first ?? 0,
-        'total': total.first.values.first ?? 0.0,
-      };
+      final db = await database;
+      return await db.query('compras', where: 'fecha BETWEEN ? AND ?', whereArgs: [start.toIso8601String(), end.toIso8601String()]);
     } catch (e) {
-      return {'count': 0, 'total': 0.0};
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAllSuppliers() async {
+    try {
+      final db = await database;
+      return await db.query('proveedores', where: 'activo = ?', whereArgs: [1]);
+    } catch (e) {
+      return [];
     }
   }
 }

@@ -1,97 +1,94 @@
 class Product {
   final int? id;
-  final String name;
-  final String code;
-  final double cost;
-  final double price;
-  final int stock;
-  final int minStock;
-  final String unit;
-  final String? description;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final String nombre;
+  final String codigo;
+  final double costoPromedio;
+  final double precioVenta;
+  final int stockActual;
+  final int stockMinimo;
+  final String unidadMedida;
+  final String? descripcion;
+  final bool activo;
 
   Product({
     this.id,
-    required this.name,
-    required this.code,
-    required this.cost,
-    required this.price,
-    required this.stock,
-    required this.minStock,
-    required this.unit,
-    this.description,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  })  : createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+    required this.nombre,
+    required this.codigo,
+    required this.costoPromedio,
+    required this.precioVenta,
+    required this.stockActual,
+    required this.stockMinimo,
+    required this.unidadMedida,
+    this.descripcion,
+    this.activo = true,
+  });
 
-  /// Convertir Product a Map para SQLite
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'code': code,
-      'cost': cost,
-      'price': price,
-      'stock': stock,
-      'min_stock': minStock,
-      'unit': unit,
-      'description': description,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
-    };
-  }
+  // Alias para compatibilidad
+  String get name => nombre;
+  String get code => codigo;
+  double get cost => costoPromedio;
+  double get price => precioVenta;
+  int get stock => stockActual;
+  int get minStock => stockMinimo;
+  String get unit => unidadMedida;
+  String? get description => descripcion;
+  bool get isLowStock => stockActual <= stockMinimo;
+  double get margen => precioVenta - costoPromedio;
+  double get valorInventario => stockActual * costoPromedio;
 
-  /// Crear Product desde Map de SQLite
   factory Product.fromMap(Map<String, dynamic> map) {
     return Product(
       id: map['id'],
-      name: map['name'],
-      code: map['code'],
-      cost: map['cost'],
-      price: map['price'],
-      stock: map['stock'],
-      minStock: map['min_stock'],
-      unit: map['unit'],
-      description: map['description'],
-      createdAt: DateTime.parse(map['created_at']),
-      updatedAt: DateTime.parse(map['updated_at']),
+      nombre: map['nombre'] ?? '',
+      codigo: map['codigo_barras'] ?? map['codigo'] ?? '',
+      costoPromedio: (map['precio_compra'] ?? map['costoPromedio'] ?? 0).toDouble(),
+      precioVenta: (map['precio_venta'] ?? map['precioVenta'] ?? 0).toDouble(),
+      stockActual: (map['stock'] ?? map['stockActual'] ?? 0).toInt(),
+      stockMinimo: (map['stock_minimo'] ?? map['stockMinimo'] ?? 5).toInt(),
+      unidadMedida: map['unidad_medida'] ?? map['unidadMedida'] ?? 'UNIDAD',
+      descripcion: map['descripcion'],
+      activo: map['activo'] == 1 || map['activo'] == true,
     );
   }
 
-  /// Copiar producto con cambios (para edición)
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'nombre': nombre,
+      'codigo_barras': codigo,
+      'precio_compra': costoPromedio,
+      'precio_venta': precioVenta,
+      'stock': stockActual,
+      'stock_minimo': stockMinimo,
+      'unidad_medida': unidadMedida,
+      'descripcion': descripcion,
+      'activo': activo ? 1 : 0,
+    };
+  }
+
   Product copyWith({
     int? id,
-    String? name,
-    String? code,
-    double? cost,
-    double? price,
-    int? stock,
-    int? minStock,
-    String? unit,
-    String? description,
+    String? nombre,
+    String? codigo,
+    double? costoPromedio,
+    double? precioVenta,
+    int? stockActual,
+    int? stockMinimo,
+    String? unidadMedida,
+    String? descripcion,
+    bool? activo,
   }) {
     return Product(
       id: id ?? this.id,
-      name: name ?? this.name,
-      code: code ?? this.code,
-      cost: cost ?? this.cost,
-      price: price ?? this.price,
-      stock: stock ?? this.stock,
-      minStock: minStock ?? this.minStock,
-      unit: unit ?? this.unit,
-      description: description ?? this.description,
-      createdAt: createdAt,
-      updatedAt: DateTime.now(),
+      nombre: nombre ?? this.nombre,
+      codigo: codigo ?? this.codigo,
+      costoPromedio: costoPromedio ?? this.costoPromedio,
+      precioVenta: precioVenta ?? this.precioVenta,
+      stockActual: stockActual ?? this.stockActual,
+      stockMinimo: stockMinimo ?? this.stockMinimo,
+      unidadMedida: unidadMedida ?? this.unidadMedida,
+      descripcion: descripcion ?? this.descripcion,
+      activo: activo ?? this.activo,
     );
-  }
-
-  /// Verificar si el stock está bajo el mínimo
-  bool get isLowStock => stock < minStock;
-
-  @override
-  String toString() {
-    return 'Product{id: $id, name: $name, code: $code, stock: $stock}';
   }
 }

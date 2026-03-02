@@ -15,7 +15,7 @@ class _SalesListPageState extends State<SalesListPage> {
   final SaleRepository _repository = SaleRepository();
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now();
-  List<Sale> _sales = [];
+  List<Map<String, dynamic>> _sales = [];
   bool _isLoading = false;
   String _filterType = 'today'; // 'today', 'week', 'month', 'custom'
 
@@ -28,7 +28,7 @@ class _SalesListPageState extends State<SalesListPage> {
   Future<void> _loadSales() async {
     setState(() => _isLoading = true);
     
-    List<Sale> sales;
+    List<Map<String, dynamic>> sales;
     if (_filterType == 'today') {
       sales = await _repository.getTodaySales();
     } else if (_filterType == 'custom') {
@@ -77,7 +77,7 @@ class _SalesListPageState extends State<SalesListPage> {
     _loadSales();
   }
 
-  double get _totalSales => _sales.fold<double>(0, (sum, sale) => sum + sale.total);
+  double get _totalSales => _sales.fold<double>(0, (sum, sale) => sum + sale['total']);
 
   @override
   Widget build(BuildContext context) {
@@ -182,24 +182,24 @@ class _SalesListPageState extends State<SalesListPage> {
                               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               child: ListTile(
                                 leading: CircleAvatar(
-                                  backgroundColor: sale.status == 'completed' ? Colors.green : Colors.orange,
+                                  backgroundColor: sale['estado'] == 'completed' ? Colors.green : Colors.orange,
                                   child: Icon(
-                                    sale.status == 'completed' ? Icons.check : Icons.pending,
+                                    sale['estado'] == 'completed' ? Icons.check : Icons.pending,
                                     color: Colors.white,
                                     size: 20,
                                   ),
                                 ),
                                 title: Text(
-                                  sale.saleNumber,
+                                  sale['numero_venta'],
                                   style: const TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(DateFormat('dd/MM/yyyy HH:mm').format(sale.date)),
-                                    if (sale.customerName != null)
-                                      Text('Cliente: ${sale.customerName}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                                    if (sale.isPartialPayment)
+                                    Text(DateFormat('dd/MM/yyyy HH:mm').format(sale['fecha'])),
+                                    if (sale['cliente'] != null)
+                                      Text('Cliente: ${sale['cliente']}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                                    if (sale['pago_parcial'])
                                       const Text('⚠️ Pago parcial', style: TextStyle(fontSize: 12, color: Colors.orange)),
                                   ],
                                 ),
@@ -208,18 +208,18 @@ class _SalesListPageState extends State<SalesListPage> {
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      '\$${sale.total.toStringAsFixed(2)}',
+                                      '\$${sale['total'].toStringAsFixed(2)}',
                                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                     ),
-                                    if (sale.isPartialPayment)
+                                    if (sale['pago_parcial'])
                                       Text(
-                                        'Pagado: \$${sale.paid.toStringAsFixed(2)}',
+                                        'Pagado: \$${sale['monto_pagado'].toStringAsFixed(2)}',
                                         style: const TextStyle(fontSize: 12, color: Colors.orange),
                                       ),
                                   ],
                                 ),
                                 onTap: () => Navigator.of(context).push(
-                                  MaterialPageRoute(builder: (_) => SaleDetailPage(saleId: sale.id!)),
+                                  MaterialPageRoute(builder: (_) => SaleDetailPage(saleId: sale['id']!)),
                                 ),
                               ),
                             );

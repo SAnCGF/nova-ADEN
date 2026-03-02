@@ -24,7 +24,7 @@ class _PurchasesReportPageState extends State<PurchasesReportPage> {
 
   Future<void> _loadReport() async {
     setState(() => _isLoading = true);
-    _report = await _repository.getPurchasesBySupplierReport(startDate: _startDate, endDate: _endDate);
+    _report = await _repository.getPurchasesBySupplierReport(null, _startDate ?? DateTime.now(), _endDate ?? DateTime.now());
     setState(() => _isLoading = false);
   }
 

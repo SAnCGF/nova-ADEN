@@ -1,257 +1,117 @@
-import 'package:nova_aden/core/models/inventory_adjustment.dart';
-import 'package:nova_aden/core/models/inventory_loss.dart';
-import 'package:nova_aden/core/models/loss_reason.dart';
-import 'package:nova_aden/core/database/database_helper.dart';
-import 'package:nova_aden/core/repositories/product_repository.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+import 'product_repository.dart';
+import '../models/product.dart';
 
 class InventoryRepository {
-  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   final ProductRepository _productRepo = ProductRepository();
+  static Database? _database;
 
-  /// Inicializar motivos de merma (RF 27)
-  Future<void> initializeReasons() async {
-    await _dbHelper.initializeLossReasons();
+  static const List<Map<String, String>> _reasons = [
+    {'id': '1', 'name': 'Dañado'},
+    {'id': '2', 'name': 'Vencido'},
+    {'id': '3', 'name': 'Pérdida'},
+    {'id': '4', 'name': 'Robo'},
+    {'id': '5', 'name': 'Ajuste'},
+    {'id': '6', 'name': 'Devolución'},
+  ];
+
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDatabase();
+    return _database!;
   }
 
-  /// Obtener motivos de merma (RF 27)
-  Future<List<LossReason>> getLossReasons() async {
-    try {
-      return await _dbHelper.getAllLossReasons();
-    } catch (e) {
-      return LossReason.getPredefinedReasons();
-    }
+  Future<Database> _initDatabase() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'nova_aden.db');
+    return await openDatabase(path, version: 3, onCreate: _onCreate);
   }
 
-  /// RF 23: Stock valorado total
-  Future<Map<String, dynamic>> getValuedStock() async {
-    try {
-      return await _dbHelper.getValuedStock();
-    } catch (e) {
-      return {'productCount': 0, 'totalUnits': 0, 'totalValue': 0.0, 'avgCost': 0.0};
-    }
+  Future<void> _onCreate(Database db, int version) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS inventory_losses(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER,
+        quantity INTEGER,
+        reason_id TEXT,
+        reason_name TEXT,
+        date TEXT,
+        notes TEXT
+      )
+    ''');
   }
 
-  /// RF 23: Stock valorado por producto
-  Future<List<Map<String, dynamic>>> getValuedStockByProduct() async {
-    try {
-      return await _dbHelper.getValuedStockByProduct();
-    } catch (e) {
-      return [];
-    }
-  }
+  Future<void> initializeReasons() async {}
 
-  /// RF 24: Ajuste positivo de inventario
-  Future<bool> registerPositiveAdjustment({
-    required int productId,
-    required String productName,
-    required String productCode,
-    required int quantity,
-    required String reason,
-    String? notes,
-  }) async {
-    try {
-      final product = await _productRepo.getProductById(productId);
-      if (product == null) return false;
+  List<Map<String, String>> getLossReasons() => _reasons;
 
-      final quantityBefore = product.stock;
-      final quantityAfter = quantityBefore + quantity;
-      final totalValue = quantity * product.cost;
-
-      final adjustment = InventoryAdjustment(
-        adjustmentNumber: 'AJT-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
-        date: DateTime.now(),
-        productId: productId,
-        productName: productName,
-        productCode: productCode,
-        quantityBefore: quantityBefore,
-        quantityAfter: quantityAfter,
-        adjustmentQuantity: quantity,
-        type: 'positive',
-        reason: reason,
-        notes: notes,
-        unitCost: product.cost,
-        totalValue: totalValue,
-      );
-
-      await _dbHelper.createAdjustment(adjustment);
-      await _productRepo.updateStock(productId, quantityAfter);
-      
-      return true;
-    } catch (e) {
-      print('Error en ajuste positivo: $e');
-      return false;
-    }
-  }
-
-  /// RF 25: Ajuste negativo de inventario
-  Future<bool> registerNegativeAdjustment({
-    required int productId,
-    required String productName,
-    required String productCode,
-    required int quantity,
-    required String reason,
-    String? notes,
-  }) async {
-    try {
-      final product = await _productRepo.getProductById(productId);
-      if (product == null) return false;
-      if (product.stock < quantity) return false; // Stock insuficiente
-
-      final quantityBefore = product.stock;
-      final quantityAfter = quantityBefore - quantity;
-      final totalValue = quantity * product.cost;
-
-      final adjustment = InventoryAdjustment(
-        adjustmentNumber: 'AJT-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
-        date: DateTime.now(),
-        productId: productId,
-        productName: productName,
-        productCode: productCode,
-        quantityBefore: quantityBefore,
-        quantityAfter: quantityAfter,
-        adjustmentQuantity: -quantity,
-        type: 'negative',
-        reason: reason,
-        notes: notes,
-        unitCost: product.cost,
-        totalValue: totalValue,
-      );
-
-      await _dbHelper.createAdjustment(adjustment);
-      await _productRepo.updateStock(productId, quantityAfter);
-      
-      return true;
-    } catch (e) {
-      print('Error en ajuste negativo: $e');
-      return false;
-    }
-  }
-
-  /// RF 26, 27: Registrar merma (individual o masiva)
   Future<bool> registerLoss({
     required int productId,
-    required String productName,
-    required String productCode,
     required int quantity,
     required String reasonId,
     required String reasonName,
     String? notes,
   }) async {
     try {
+      final db = await database;
       final product = await _productRepo.getProductById(productId);
       if (product == null) return false;
-      if (product.stock < quantity) return false;
-
-      final quantityBefore = product.stock;
-      final quantityAfter = quantityBefore - quantity;
-      final totalValue = quantity * product.cost;
-
-      final loss = InventoryLoss(
-        lossNumber: 'MRM-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
-        date: DateTime.now(),
-        productId: productId,
-        productName: productName,
-        productCode: productCode,
-        quantity: quantity,
-        unitCost: product.cost,
-        totalValue: totalValue,
-        reasonId: reasonId,
-        reasonName: reasonName,
-        notes: notes,
-      );
-
-      await _dbHelper.createLoss(loss);
-      await _productRepo.updateStock(productId, quantityAfter);
-      
-      return true;
-    } catch (e) {
-      print('Error en merma: $e');
-      return false;
-    }
-  }
-
-  /// RF 26: Registrar mermas masivas
-  Future<bool> registerMassLoss(List<Map<String, dynamic>> losses) async {
-    try {
-      for (final lossData in losses) {
-        final success = await registerLoss(
-          productId: lossData['productId'],
-          productName: lossData['productName'],
-          productCode: lossData['productCode'],
-          quantity: lossData['quantity'],
-          reasonId: lossData['reasonId'],
-          reasonName: lossData['reasonName'],
-          notes: lossData['notes'],
-        );
-        if (!success) return false;
-      }
+      final newStock = product.stockActual - quantity;
+      if (newStock < 0) return false;
+      await db.insert('inventory_losses', {
+        'product_id': productId,
+        'quantity': quantity,
+        'reason_id': reasonId,
+        'reason_name': reasonName,
+        'date': DateTime.now().toIso8601String(),
+        'notes': notes,
+      });
+      await _productRepo.updateStock(productId, newStock, false);
       return true;
     } catch (e) {
       return false;
     }
   }
 
-  /// RF 28: Listar mermas con filtros
-  Future<List<InventoryLoss>> getLosses({
-    DateTime? startDate,
-    DateTime? endDate,
-    String? reasonId,
-  }) async {
+  Future<List<Map<String, dynamic>>> getLosses() async {
     try {
-      if (reasonId != null) {
-        return await _dbHelper.getLossesByReason(reasonId);
-      }
-      
-      if (startDate != null && endDate != null) {
-        return await _dbHelper.getLossesByDateRange(startDate, endDate);
-      }
-      
-      // Últimos 30 días por defecto
-      final end = DateTime.now();
-      final start = end.subtract(const Duration(days: 30));
-      return await _dbHelper.getLossesByDateRange(start, end);
+      final db = await database;
+      return await db.query('inventory_losses', orderBy: 'date DESC');
     } catch (e) {
       return [];
     }
   }
 
-  /// Listar ajustes
-  Future<List<InventoryAdjustment>> getAdjustments({
-    DateTime? startDate,
-    DateTime? endDate,
-  }) async {
+  Future<Map<String, dynamic>> getValuedStock() async {
     try {
-      if (startDate != null && endDate != null) {
-        return await _dbHelper.getAdjustmentsByDateRange(startDate, endDate);
+      final products = await _productRepo.getAllProducts();
+      double total = 0;
+      for (var p in products) {
+        total += p.stockActual * p.costoPromedio;
       }
-      
-      final end = DateTime.now();
-      final start = end.subtract(const Duration(days: 30));
-      return await _dbHelper.getAdjustmentsByDateRange(start, end);
-    } catch (e) {
-      return [];
-    }
-  }
-
-  /// Estadísticas de mermas
-  Future<Map<String, dynamic>> getLossStats(DateTime start, DateTime end) async {
-    try {
-      final losses = await getLosses(startDate: start, endDate: end);
-      final totalValue = losses.fold<double>(0, (sum, l) => sum + l.totalValue);
-      
-      // Agrupar por motivo
-      final byReason = <String, double>{};
-      for (final loss in losses) {
-        byReason[loss.reasonName] = (byReason[loss.reasonName] ?? 0) + loss.totalValue;
-      }
-      
       return {
-        'count': losses.length,
-        'totalValue': totalValue,
-        'byReason': byReason,
+        'totalValue': total,
+        'totalProducts': products.length,
+        'lowStockCount': products.where((p) => p.stockActual <= p.stockMinimo).length,
       };
     } catch (e) {
-      return {'count': 0, 'totalValue': 0.0, 'byReason': {}};
+      return {'totalValue': 0.0, 'totalProducts': 0, 'lowStockCount': 0};
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getValuedStockByProduct() async {
+    try {
+      final products = await _productRepo.getAllProducts();
+      return products.map((p) => {
+        'id': p.id,
+        'name': p.nombre,
+        'stock': p.stockActual,
+        'cost': p.costoPromedio,
+        'totalValue': p.stockActual * p.costoPromedio,
+      }).toList();
+    } catch (e) {
+      return [];
     }
   }
 }

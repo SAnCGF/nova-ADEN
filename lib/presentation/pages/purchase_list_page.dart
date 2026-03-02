@@ -14,7 +14,7 @@ class _PurchaseListPageState extends State<PurchaseListPage> {
   final PurchaseRepository _repository = PurchaseRepository();
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now();
-  List<Purchase> _purchases = [];
+  List<Map<String, dynamic>> _purchases = [];
   bool _isLoading = false;
   String _filterType = 'today';
 
@@ -27,7 +27,7 @@ class _PurchaseListPageState extends State<PurchaseListPage> {
   Future<void> _loadPurchases() async {
     setState(() => _isLoading = true);
     
-    List<Purchase> purchases;
+    List<Map<String, dynamic>> purchases;
     if (_filterType == 'today') {
       purchases = await _repository.getTodayPurchases();
     } else {
@@ -65,7 +65,7 @@ class _PurchaseListPageState extends State<PurchaseListPage> {
     _loadPurchases();
   }
 
-  double get _totalPurchases => _purchases.fold<double>(0, (sum, p) => sum + p.total);
+  double get _totalPurchases => _purchases.fold<double>(0, (sum, p) => sum + p['total']);
 
   @override
   Widget build(BuildContext context) {
@@ -140,22 +140,22 @@ class _PurchaseListPageState extends State<PurchaseListPage> {
                               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               child: ListTile(
                                 leading: CircleAvatar(
-                                  backgroundColor: purchase.status == 'completed' ? Colors.green : Colors.orange,
-                                  child: Icon(purchase.status == 'completed' ? Icons.check : Icons.pending, color: Colors.white, size: 20),
+                                  backgroundColor: purchase['estado'] == 'completed' ? Colors.green : Colors.orange,
+                                  child: Icon(purchase['estado'] == 'completed' ? Icons.check : Icons.pending, color: Colors.white, size: 20),
                                 ),
-                                title: Text(purchase.purchaseNumber, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                title: Text(purchase['numero_compra'], style: const TextStyle(fontWeight: FontWeight.bold)),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(DateFormat('dd/MM/yyyy HH:mm').format(purchase.date)),
-                                    Text('Proveedor: ${purchase.supplierName ?? 'Compra Rápida'}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                                    Text(DateFormat('dd/MM/yyyy HH:mm').format(purchase['fecha'])),
+                                    Text('Proveedor: ${purchase['proveedor'] ?? 'Compra Rápida'}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                                   ],
                                 ),
                                 trailing: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
-                                    Text('\$${purchase.total.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                    Text('\$${purchase['total'].toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                   ],
                                 ),
                               ),

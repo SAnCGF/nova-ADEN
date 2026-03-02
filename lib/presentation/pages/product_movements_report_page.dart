@@ -47,7 +47,7 @@ class _ProductMovementsReportPageState extends State<ProductMovementsReportPage>
   Future<void> _loadReport() async {
     if (_selectedProduct == null) return;
     setState(() => _isLoading = true);
-    _report = await _repository.getProductMovementsReport(productId: _selectedProduct!.id!);
+    _report = await _repository.getProductMovementsReport(0);
     setState(() => _isLoading = false);
   }
 

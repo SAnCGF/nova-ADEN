@@ -1,107 +1,81 @@
-import 'package:nova_aden/core/models/sale.dart';
-import 'package:nova_aden/core/models/sale_item.dart';
-import 'package:nova_aden/core/database/database_helper.dart';
-import 'package:nova_aden/core/repositories/product_repository.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+import 'product_repository.dart';
 
 class SaleRepository {
-  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   final ProductRepository _productRepo = ProductRepository();
+  static Database? _database;
 
-  /// RF 13, 14, 15, 16, 18: Registrar venta completa
-  Future<bool> registerSale({
-    required List<SaleItem> items,
-    required double discount,
-    required double paid,
-    String? customerName,
-    String? customerPhone,
-    bool isPartialPayment = false,
-  }) async {
-    try {
-      // Validar stock para cada producto
-      for (final item in items) {
-        final product = await _productRepo.getProductById(item.productId);
-        if (product == null || product.stock < item.quantity) {
-          return false; // Stock insuficiente
-        }
-      }
-
-      // Calcular totales
-      final subtotal = items.fold<double>(0, (sum, item) => sum + item.subtotal);
-      final total = subtotal - discount;
-      final change = paid - total;
-
-      // Generar número de venta único
-      final saleNumber = 'VTA-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}';
-
-      // Crear venta
-      final sale = Sale(
-        saleNumber: saleNumber,
-        date: DateTime.now(),
-        subtotal: subtotal,
-        discount: discount,
-        total: total,
-        paid: paid,
-        change: change,
-        isPartialPayment: isPartialPayment,
-        customerName: customerName,
-        customerPhone: customerPhone,
-        status: isPartialPayment ? 'pending' : 'completed',
-      );
-
-      // Actualizar stock de productos
-      for (final item in items) {
-        final product = await _productRepo.getProductById(item.productId);
-        if (product != null) {
-          await _productRepo.updateStock(item.productId, product.stock - item.quantity);
-        }
-      }
-
-      // Guardar venta con ítems
-      return await _dbHelper.createSaleWithItems(sale, items);
-    } catch (e) {
-      return false;
-    }
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDatabase();
+    return _database!;
   }
 
-  /// RF 20: Listar ventas del día
-  Future<List<Sale>> getTodaySales() async {
+  Future<Database> _initDatabase() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'nova_aden.db');
+    return await openDatabase(path, version: 3, onCreate: _onCreate);
+  }
+
+  Future<void> _onCreate(Database db, int version) async {
+    await db.execute('''CREATE TABLE IF NOT EXISTS ventas(id INTEGER PRIMARY KEY AUTOINCREMENT, numero_venta TEXT, fecha TEXT, total REAL, subtotal REAL, impuesto REAL DEFAULT 0, descuento REAL DEFAULT 0, metodo_pago TEXT, cliente TEXT, vendedor TEXT, estado INTEGER DEFAULT 1)''');
+    await db.execute('''CREATE TABLE IF NOT EXISTS detalle_ventas(id INTEGER PRIMARY KEY AUTOINCREMENT, venta_id INTEGER, producto_id INTEGER, nombre_producto TEXT, cantidad INTEGER, precio_unitario REAL, subtotal REAL, descuento REAL DEFAULT 0, total REAL)''');
+  }
+
+  Future<int> registerSale(Map<String, dynamic> sale, List<Map<String, dynamic>> items, bool allowNegative) async {
+    final db = await database;
+    int id = 0;
+    await db.transaction((txn) async {
+      id = await txn.insert('ventas', sale);
+      for (var item in items) {
+        item['venta_id'] = id;
+        await txn.insert('detalle_ventas', item);
+        final p = await _productRepo.getProductById(item['producto_id']);
+        if (p != null) {
+          final newStock = p.stockActual - ((item['cantidad'] ?? 0) as num).toInt();
+          await _productRepo.updateStock(item['producto_id'], newStock, allowNegative);
+        }
+      }
+    });
+    return id;
+  }
+
+  Future<List<Map<String, dynamic>>> getAllSales() async {
     try {
-      return await _dbHelper.getTodaySales();
+      final db = await database;
+      return await db.query('ventas', orderBy: 'fecha DESC');
     } catch (e) {
       return [];
     }
   }
 
-  /// RF 21: Filtrar ventas por fechas
-  Future<List<Sale>> getSalesByDateRange(DateTime start, DateTime end) async {
+  Future<List<Map<String, dynamic>>> getTodaySales() async {
     try {
-      return await _dbHelper.getSalesByDateRange(start, end);
+      final db = await database;
+      final now = DateTime.now();
+      final start = DateTime(now.year, now.month, now.day);
+      return await db.query('ventas', where: 'fecha >= ?', whereArgs: [start.toIso8601String()]);
     } catch (e) {
       return [];
     }
   }
 
-  /// RF 22: Ver detalle de venta
-  Future<Map<String, dynamic>?> getSaleDetail(int saleId) async {
+  Future<List<Map<String, dynamic>>> getSalesByDateRange(DateTime start, DateTime end) async {
     try {
-      final sale = await _dbHelper.getSaleById(saleId);
-      if (sale == null) return null;
-      
-      final items = await _dbHelper.getSaleItems(saleId);
-      return {'sale': sale, 'items': items};
+      final db = await database;
+      return await db.query('ventas', where: 'fecha BETWEEN ? AND ?', whereArgs: [start.toIso8601String(), end.toIso8601String()]);
     } catch (e) {
-      return null;
+      return [];
     }
   }
 
-  /// Estadísticas de ventas
-  Future<Map<String, dynamic>> getStats() async {
+  Future<List<Map<String, dynamic>>> getSaleDetail(int saleId) async {
     try {
-      final todayCount = await _dbHelper.getSaleCount();
-      final todayTotal = await _dbHelper.getTodaySalesTotal();
-      return {'count': todayCount, 'total': todayTotal};
+      final db = await database;
+      return await db.query('detalle_ventas', where: 'venta_id = ?', whereArgs: [saleId]);
     } catch (e) {
-      return {'count': 0, 'total': 0.0};
+      return [];
     }
   }
 }

@@ -24,7 +24,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
 
   Future<void> _loadReport() async {
     setState(() => _isLoading = true);
-    _report = await _repository.getSalesDetailReport(startDate: _startDate, endDate: _endDate);
+    _report = await _repository.getSalesDetailReport(_startDate ?? DateTime.now(), _endDate ?? DateTime.now());
     setState(() => _isLoading = false);
   }
 
@@ -172,8 +172,8 @@ class _SalesReportPageState extends State<SalesReportPage> {
   }
 
   Future<void> _exportCSV() async {
-    final path = await _repository.exportSalesToCSV(_startDate, _endDate);
-    if (path.isNotEmpty && mounted) {
+    final path = await _repository.exportSalesToCSV();
+    if (path== true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('✅ Exportado a: $path'), duration: const Duration(seconds: 4)),
       );

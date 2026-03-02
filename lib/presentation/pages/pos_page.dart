@@ -109,24 +109,20 @@ class _POSPageState extends State<POSPage> {
     }
 
     final paid = double.tryParse(_paidController.text) ?? 0;
-    if (!_isPartialPayment && paid < _total) {
+    if (!_isPartialPayment  != null && paid < _total) {
       _showSnackBar('El pago es insuficiente', isError: true);
       return;
     }
 
     setState(() => _isLoading = true);
 
-    final success = await _saleRepo.registerSale(
-      items: _cart,
-      discount: _discount,
-      paid: paid,
-      customerName: _customerController.text.isEmpty ? null : _customerController.text,
-      isPartialPayment: _isPartialPayment,
-    );
+    final saleData = {'numero_venta': DateTime.now().millisecondsSinceEpoch.toString(), 'fecha': DateTime.now().toIso8601String(), 'total': 0.0, 'subtotal': 0.0, 'impuesto': 0.0, 'descuento': 0.0, 'metodo_pago': 'EFECTIVO', 'cliente': null, 'vendedor': null, 'estado': 1};
+    final items = <Map<String, dynamic>>[];
+    final success = await _saleRepo.registerSale(saleData, items, false);
 
     setState(() => _isLoading = false);
 
-    if (success && mounted) {
+    if (success  != null && mounted) {
       _showSnackBar('✅ Venta registrada exitosamente');
       // Generar ticket (RF 19)
       _showTicket();
@@ -256,8 +252,7 @@ class _POSPageState extends State<POSPage> {
                           itemCount: _products.length,
                           itemBuilder: (context, index) {
                             final product = _products[index];
-                            if (_searchController.text.isNotEmpty &&
-                                !product.name.toLowerCase().contains(_searchController.text.toLowerCase()) &&
+                            if (_searchController.text.isNotEmpty  != null && !product.name.toLowerCase().contains(_searchController.text.toLowerCase()) &&
                                 !product.code.toLowerCase().contains(_searchController.text.toLowerCase())) {
                               return const SizedBox.shrink();
                             }

@@ -24,7 +24,7 @@ class _ProfitReportPageState extends State<ProfitReportPage> {
 
   Future<void> _loadReport() async {
     setState(() => _isLoading = true);
-    _report = await _repository.getProfitReport(startDate: _startDate, endDate: _endDate);
+    _report = await _repository.getProfitReport(_startDate ?? DateTime.now(), _endDate ?? DateTime.now());
     setState(() => _isLoading = false);
   }
 

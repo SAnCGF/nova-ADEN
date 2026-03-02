@@ -1,0 +1,155 @@
+Analyzing nova-ADEN...                                          
+
+   info • 'background' is deprecated and shouldn't be used. Use surface instead. This feature was deprecated after v3.18.0-0.1.pre • lib/core/config/theme/app_theme.dart:21:7 • deprecated_member_use
+  error • The argument type 'CardTheme' can't be assigned to the parameter type 'CardThemeData?'.  • lib/core/config/theme/app_theme.dart:29:16 • argument_type_not_assignable
+   info • 'background' is deprecated and shouldn't be used. Use surface instead. This feature was deprecated after v3.18.0-0.1.pre • lib/core/config/theme/app_theme.dart:64:7 • deprecated_member_use
+  error • Invalid constant value • lib/core/config/theme/app_theme.dart:67:24 • invalid_constant
+  error • The argument type 'CardTheme' can't be assigned to the parameter type 'CardThemeData?'.  • lib/core/config/theme/app_theme.dart:72:16 • argument_type_not_assignable
+  error • The getter 'stock' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/inventory_repository.dart:56:38 • undefined_getter
+  error • The getter 'cost' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/inventory_repository.dart:58:45 • undefined_getter
+  error • The getter 'cost' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/inventory_repository.dart:72:27 • undefined_getter
+  error • 3 positional arguments expected by 'updateStock', but 2 found • lib/core/repositories/inventory_repository.dart:77:62 • not_enough_positional_arguments
+   info • Don't invoke 'print' in production code • lib/core/repositories/inventory_repository.dart:81:7 • avoid_print
+  error • The getter 'stock' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/inventory_repository.dart:98:19 • undefined_getter
+  error • The getter 'stock' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/inventory_repository.dart:100:38 • undefined_getter
+  error • The getter 'cost' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/inventory_repository.dart:102:45 • undefined_getter
+  error • The getter 'cost' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/inventory_repository.dart:116:27 • undefined_getter
+  error • 3 positional arguments expected by 'updateStock', but 2 found • lib/core/repositories/inventory_repository.dart:121:62 • not_enough_positional_arguments
+   info • Don't invoke 'print' in production code • lib/core/repositories/inventory_repository.dart:125:7 • avoid_print
+  error • The getter 'stock' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/inventory_repository.dart:143:19 • undefined_getter
+  error • The getter 'stock' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/inventory_repository.dart:145:38 • undefined_getter
+  error • The getter 'cost' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/inventory_repository.dart:147:45 • undefined_getter
+  error • The getter 'cost' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/inventory_repository.dart:156:27 • undefined_getter
+  error • 3 positional arguments expected by 'updateStock', but 2 found • lib/core/repositories/inventory_repository.dart:164:62 • not_enough_positional_arguments
+   info • Don't invoke 'print' in production code • lib/core/repositories/inventory_repository.dart:168:7 • avoid_print
+  error • The getter 'stock' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/purchase_repository.dart:62:36 • undefined_getter
+  error • The getter 'cost' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/purchase_repository.dart:64:40 • undefined_getter
+  error • The getter 'stock' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/purchase_repository.dart:64:55 • undefined_getter
+  error • 3 positional arguments expected by 'updateStock', but 2 found • lib/core/repositories/purchase_repository.dart:65:66 • not_enough_positional_arguments
+   info • Don't invoke 'print' in production code • lib/core/repositories/purchase_repository.dart:81:7 • avoid_print
+warning • Unused import: 'dart:convert' • lib/core/repositories/report_repository.dart:1:8 • unused_import
+warning • Unused import: 'package:nova_aden/core/models/product.dart' • lib/core/repositories/report_repository.dart:5:8 • unused_import
+warning • Unused import: 'package:nova_aden/core/models/sale.dart' • lib/core/repositories/report_repository.dart:6:8 • unused_import
+warning • Unused import: 'package:nova_aden/core/models/purchase.dart' • lib/core/repositories/report_repository.dart:7:8 • unused_import
+  error • The getter 'id' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/report_repository.dart:30:17 • undefined_getter
+  error • The getter 'code' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/report_repository.dart:31:19 • undefined_getter
+  error • The getter 'name' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/report_repository.dart:32:19 • undefined_getter
+  error • The getter 'stock' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/report_repository.dart:33:20 • undefined_getter
+  error • The getter 'cost' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/report_repository.dart:34:19 • undefined_getter
+  error • The getter 'price' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/report_repository.dart:35:20 • undefined_getter
+  error • The getter 'stock' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/report_repository.dart:36:20 • undefined_getter
+  error • The getter 'cost' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/report_repository.dart:36:30 • undefined_getter
+  error • The getter 'price' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/report_repository.dart:37:21 • undefined_getter
+  error • The getter 'cost' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/report_repository.dart:37:31 • undefined_getter
+  error • The getter 'isLowStock' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/report_repository.dart:38:25 • undefined_getter
+  error • The getter 'isLowStock' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/report_repository.dart:46:50 • undefined_getter
+  error • The getter 'stock' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/report_repository.dart:102:33 • undefined_getter
+  error • The getter 'cost' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/report_repository.dart:195:36 • undefined_getter
+  error • The getter 'stock' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/sale_repository.dart:23:40 • undefined_getter
+  error • The getter 'stock' isn't defined for the type 'Map<String, dynamic>' • lib/core/repositories/sale_repository.dart:55:66 • undefined_getter
+  error • 3 positional arguments expected by 'updateStock', but 2 found • lib/core/repositories/sale_repository.dart:55:87 • not_enough_positional_arguments
+   info • The imported package 'crypto' isn't a dependency of the importing package • lib/core/services/license_service.dart:2:8 • depend_on_referenced_packages
+   info • Uses 'await' on an instance of 'Database', which is not a subtype of 'Future' • lib/data/datasources/database_helper.dart:87:16 • await_only_futures
+   info • The private field _cart could be 'final' • lib/presentation/bloc/venta_bloc.dart:25:18 • prefer_final_fields
+   info • The import of 'package:flutter/services.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' • lib/presentation/pages/backup_page.dart:2:8 • unnecessary_import
+warning • Unused import: 'package:provider/provider.dart' • lib/presentation/pages/backup_page.dart:3:8 • unused_import
+warning • The value of the field '_isLoading' isn't used • lib/presentation/pages/backup_page.dart:15:8 • unused_field
+warning • Unused import: '../bloc/venta_bloc.dart' • lib/presentation/pages/home_page.dart:13:8 • unused_import
+   info • The private field _ventasHoy could be 'final' • lib/presentation/pages/home_page.dart:24:7 • prefer_final_fields
+   info • The private field _alertasStock could be 'final' • lib/presentation/pages/home_page.dart:25:7 • prefer_final_fields
+   info • The private field _ingresosDia could be 'final' • lib/presentation/pages/home_page.dart:26:10 • prefer_final_fields
+warning • The declaration '_showComingSoon' isn't referenced • lib/presentation/pages/home_page.dart:291:8 • unused_element
+warning • Unused import: 'package:intl/intl.dart' • lib/presentation/pages/inventory_loss_page.dart:6:8 • unused_import
+   info • The private field _cart could be 'final' • lib/presentation/pages/inventory_loss_page.dart:19:30 • prefer_final_fields
+   info • The private field _isMassLoss could be 'final' • lib/presentation/pages/inventory_loss_page.dart:24:8 • prefer_final_fields
+warning • The value of the field '_isMassLoss' isn't used • lib/presentation/pages/inventory_loss_page.dart:24:8 • unused_field
+   info • Don't use 'BuildContext's across async gaps • lib/presentation/pages/inventory_loss_page.dart:50:7 • use_build_context_synchronously
+  error • The getter 'name' isn't defined for the type 'Map<String, dynamic>' • lib/presentation/pages/inventory_loss_page.dart:61:37 • undefined_getter
+  error • The getter 'stock' isn't defined for the type 'Map<String, dynamic>' • lib/presentation/pages/inventory_loss_page.dart:62:50 • undefined_getter
+   info • Don't use 'BuildContext's across async gaps • lib/presentation/pages/inventory_loss_page.dart:76:7 • use_build_context_synchronously
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/presentation/pages/inventory_loss_page.dart:226:23 • deprecated_member_use
+  error • Arguments of a constant creation must be constant expressions • lib/presentation/pages/inventory_loss_page.dart:229:42 • const_with_non_constant_argument
+  error • The getter 'reason' isn't defined for the type 'Icons' • lib/presentation/pages/inventory_loss_page.dart:229:48 • undefined_getter
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/inventory_loss_page.dart:296:57 • deprecated_member_use
+warning • Unused import: 'package:intl/intl.dart' • lib/presentation/pages/inventory_report_page.dart:3:8 • unused_import
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/inventory_report_page.dart:127:58 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/presentation/pages/inventory_report_page.dart:139:28 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/license_activation_page.dart:87:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/license_activation_page.dart:126:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/license_activation_page.dart:184:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/license_activation_page.dart:187:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/license_activation_page.dart:252:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/license_activation_page.dart:255:56 • deprecated_member_use
+   info • Use 'const' with the constructor to improve performance • lib/presentation/pages/license_activation_page.dart:261:25 • prefer_const_constructors
+   info • Use 'const' literals as arguments to constructors of '@immutable' classes • lib/presentation/pages/license_activation_page.dart:262:37 • prefer_const_literals_to_create_immutables
+   info • The private field _startDate could be 'final' • lib/presentation/pages/loss_history_page.dart:19:12 • prefer_final_fields
+   info • The private field _endDate could be 'final' • lib/presentation/pages/loss_history_page.dart:20:12 • prefer_final_fields
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/loss_history_page.dart:64:90 • deprecated_member_use
+  error • The named parameter 'onPressed' isn't defined • lib/presentation/pages/loss_history_page.dart:122:19 • undefined_named_parameter
+  error • The named parameter 'onPressed' isn't defined • lib/presentation/pages/loss_history_page.dart:132:19 • undefined_named_parameter
+   info • The private field _cart could be 'final' • lib/presentation/pages/pos_page.dart:23:18 • prefer_final_fields
+  error • A value of type 'List<Map<String, dynamic>>' can't be assigned to a variable of type 'List<Product>' • lib/presentation/pages/pos_page.dart:45:17 • invalid_assignment
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/pos_page.dart:335:63 • deprecated_member_use
+warning • The declaration '_getFilterLabel' isn't referenced • lib/presentation/pages/price_update_page.dart:26:10 • unused_element
+   info • 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre • lib/presentation/pages/price_update_page.dart:63:29 • deprecated_member_use
+   info • 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre • lib/presentation/pages/price_update_page.dart:64:29 • deprecated_member_use
+   info • 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre • lib/presentation/pages/price_update_page.dart:69:29 • deprecated_member_use
+   info • 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre • lib/presentation/pages/price_update_page.dart:70:29 • deprecated_member_use
+   info • 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre • lib/presentation/pages/price_update_page.dart:75:29 • deprecated_member_use
+   info • 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre • lib/presentation/pages/price_update_page.dart:76:29 • deprecated_member_use
+  error • The argument type 'Product' can't be assigned to the parameter type 'Map<String, dynamic>'.  • lib/presentation/pages/product_form_page.dart:88:43 • argument_type_not_assignable
+  error • The argument type 'Product' can't be assigned to the parameter type 'int'.  • lib/presentation/pages/product_form_page.dart:89:43 • argument_type_not_assignable
+  error • 2 positional arguments expected by 'updateProduct', but 1 found • lib/presentation/pages/product_form_page.dart:89:50 • not_enough_positional_arguments
+  error • Conditions must have a static type of 'bool' • lib/presentation/pages/product_form_page.dart:94:11 • non_bool_condition
+   info • Don't use 'BuildContext's across async gaps • lib/presentation/pages/product_form_page.dart:140:32 • use_build_context_synchronously
+  error • A value of type 'List<Map<String, dynamic>>' can't be assigned to a variable of type 'List<Product>' • lib/presentation/pages/product_list_page.dart:37:19 • invalid_assignment
+  error • A value of type 'List<Map<String, dynamic>>' can't be assigned to a variable of type 'List<Product>' • lib/presentation/pages/product_list_page.dart:40:19 • invalid_assignment
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/product_list_page.dart:154:35 • deprecated_member_use
+   info • Use 'const' with the constructor to improve performance • lib/presentation/pages/product_list_page.dart:157:22 • prefer_const_constructors
+   info • Use 'const' literals as arguments to constructors of '@immutable' classes • lib/presentation/pages/product_list_page.dart:158:27 • prefer_const_literals_to_create_immutables
+   info • The 'child' argument should be last in widget constructor invocations • lib/presentation/pages/product_list_page.dart:216:9 • sort_child_properties_last
+   info • Don't use 'BuildContext's across async gaps • lib/presentation/pages/product_movements_report_page.dart:24:7 • use_build_context_synchronously
+  error • The getter 'name' isn't defined for the type 'Map<String, dynamic>' • lib/presentation/pages/product_movements_report_page.dart:33:43 • undefined_getter
+  error • The getter 'stock' isn't defined for the type 'Map<String, dynamic>' • lib/presentation/pages/product_movements_report_page.dart:34:56 • undefined_getter
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/product_movements_report_page.dart:141:56 • deprecated_member_use
+warning • Unused import: 'package:intl/intl.dart' • lib/presentation/pages/profit_report_page.dart:3:8 • unused_import
+   info • Don't use 'BuildContext's across async gaps • lib/presentation/pages/profit_report_page.dart:34:38 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/profit_report_page.dart:86:59 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/profit_report_page.dart:112:54 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/presentation/pages/purchase_list_page.dart:53:7 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/purchase_list_page.dart:109:80 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/purchase_list_page.dart:113:91 • deprecated_member_use
+   info • The private field _cart could be 'final' • lib/presentation/pages/purchase_page.dart:21:22 • prefer_final_fields
+  error • A value of type 'List<Map<String, dynamic>>' can't be assigned to a variable of type 'List<Product>' • lib/presentation/pages/purchase_page.dart:40:17 • invalid_assignment
+   info • Don't use 'BuildContext's across async gaps • lib/presentation/pages/purchase_page.dart:53:7 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/purchase_page.dart:339:73 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/purchase_page.dart:385:63 • deprecated_member_use
+   info • The private field _startDate could be 'final' • lib/presentation/pages/purchases_report_page.dart:15:12 • prefer_final_fields
+   info • The private field _endDate could be 'final' • lib/presentation/pages/purchases_report_page.dart:16:12 • prefer_final_fields
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/purchases_report_page.dart:58:118 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/reports_page.dart:108:37 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/reports_page.dart:128:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/sale_detail_page.dart:66:78 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/sale_detail_page.dart:66:111 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/presentation/pages/sales_list_page.dart:65:7 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/sales_list_page.dart:125:56 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/sales_list_page.dart:135:56 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/presentation/pages/sales_report_page.dart:41:7 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/sales_report_page.dart:169:58 • deprecated_member_use
+   info • 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre • lib/presentation/pages/settings_page.dart:126:21 • deprecated_member_use
+   info • 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre • lib/presentation/pages/settings_page.dart:127:21 • deprecated_member_use
+   info • 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre • lib/presentation/pages/settings_page.dart:138:21 • deprecated_member_use
+   info • 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre • lib/presentation/pages/settings_page.dart:139:21 • deprecated_member_use
+   info • The private field _isChecking could be 'final' • lib/presentation/pages/splash_page.dart:15:8 • prefer_final_fields
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/splash_page.dart:79:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/splash_page.dart:83:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/splash_page.dart:111:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/splash_page.dart:142:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/splash_page.dart:150:47 • deprecated_member_use
+warning • Unused import: 'package:intl/intl.dart' • lib/presentation/pages/valued_stock_page.dart:3:8 • unused_import
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/pages/valued_stock_page.dart:123:58 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/widgets/dashboard_card.dart:39:36 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/widgets/module_button.dart:30:30 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/widgets/product_card.dart:68:43 • deprecated_member_use
+
+151 issues found. (ran in 1.6s)

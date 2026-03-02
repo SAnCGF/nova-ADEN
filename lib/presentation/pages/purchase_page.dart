@@ -61,8 +61,8 @@ class _PurchasePageState extends State<PurchasePage> {
             itemBuilder: (context, index) {
               final supplier = suppliers[index];
               return ListTile(
-                title: Text(supplier.name),
-                subtitle: Text(supplier.phone ?? ''),
+                title: Text(supplier['nombre']),
+                subtitle: Text(supplier['telefono'] ?? ''),
                 onTap: () => Navigator.pop(ctx, supplier),
               );
             },
@@ -93,7 +93,7 @@ class _PurchasePageState extends State<PurchasePage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Agregar ${product.name}'),
+        title: Text('Agregar ${product.nombre}'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -138,7 +138,7 @@ class _PurchasePageState extends State<PurchasePage> {
                 } else {
                   _cart.add(PurchaseItem(
                     productId: product.id!,
-                    productName: product.name,
+                    productName: product.nombre,
                     quantity: qty,
                     unitCost: cost,
                     subtotal: qty * cost,
@@ -217,16 +217,12 @@ class _PurchasePageState extends State<PurchasePage> {
 
     setState(() => _isLoading = true);
 
-    final success = await _purchaseRepo.registerPurchase(
-      items: _cart,
-      supplierId: _selectedSupplier?.id,
-      supplierName: _selectedSupplier?.name,
-      isQuickPurchase: _isQuickPurchase,
-    );
+    final purchaseData = {'numero_compra': DateTime.now().millisecondsSinceEpoch.toString(), 'fecha': DateTime.now().toIso8601String(), 'proveedor': _selectedSupplier?.name, 'total': _total, 'estado': 1};
+    final success = await _purchaseRepo.registerPurchase(purchaseData, _cart.map((item) => item.toMap()).toList());
 
     setState(() => _isLoading = false);
 
-    if (success && mounted) {
+    if (success == true && mounted) {
       _showSnackBar('✅ Compra registrada exitosamente');
       setState(() {
         _cart.clear();
@@ -298,14 +294,14 @@ class _PurchasePageState extends State<PurchasePage> {
                           itemBuilder: (context, index) {
                             final product = _products[index];
                             if (_searchController.text.isNotEmpty &&
-                                !product.name.toLowerCase().contains(_searchController.text.toLowerCase()) &&
+                                !product.nombre.toLowerCase().contains(_searchController.text.toLowerCase()) &&
                                 !product.code.toLowerCase().contains(_searchController.text.toLowerCase())) {
                               return const SizedBox.shrink();
                             }
                             return ListTile(
                               leading: const Icon(Icons.inventory_2, color: Color(0xFF1E3A5F)),
-                              title: Text(product.name),
-                              subtitle: Text('Stock: ${product.stock} | Costo: \$${product.cost}'),
+                              title: Text(product.nombre),
+                              subtitle: Text('Stock: ${product.stockActual} | Costo: \$${product.costoPromedio}'),
                               trailing: ElevatedButton(
                                 onPressed: () => _addToCart(product),
                                 child: const Icon(Icons.add),

@@ -131,7 +131,7 @@ class _InventoryReportPageState extends State<InventoryReportPage> {
 
   Future<void> _exportCSV() async {
     final path = await _repository.exportInventoryToCSV();
-    if (path.isNotEmpty && mounted) {
+    if (path== true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('✅ Exportado a: $path'), duration: const Duration(seconds: 4)),
       );

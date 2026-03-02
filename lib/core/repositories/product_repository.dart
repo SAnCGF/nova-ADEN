@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import '../models/product.dart';
 
 class ProductRepository {
   static Database? _database;
@@ -13,12 +14,7 @@ class ProductRepository {
   Future<Database> _initDatabase() async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'nova_aden.db');
-
-    return await openDatabase(
-      path,
-      version: 3,
-      onCreate: _onCreate,
-    );
+    return await openDatabase(path, version: 3, onCreate: _onCreate);
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -40,85 +36,57 @@ class ProductRepository {
     ''');
   }
 
-  Future<List<Map<String, dynamic>>> getAllProductos() async {
+  Future<List<Product>> getAllProducts() async {
     final db = await database;
-    return await db.query('productos', where: 'activo = ?', whereArgs: [1]);
+    final maps = await db.query('productos', where: 'activo = ?', whereArgs: [1]);
+    return maps.map((m) => Product.fromMap(m)).toList();
   }
 
-  Future<List<Map<String, dynamic>>> getAllProducts() async {
-    return getAllProductos();
-  }
-
-  Future<Map<String, dynamic>?> getProductoById(int id) async {
+  Future<Product?> getProductById(int id) async {
     final db = await database;
     final maps = await db.query('productos', where: 'id = ?', whereArgs: [id]);
-    return maps.isNotEmpty ? maps.first : null;
+    return maps.isNotEmpty ? Product.fromMap(maps.first) : null;
   }
 
-  Future<Map<String, dynamic>?> getProductById(int id) async {
-    return getProductoById(id);
-  }
-
-  Future<Map<String, dynamic>?> getProductByCode(String code) async {
+  Future<Product?> getProductByCode(String code) async {
     final db = await database;
-    final maps = await db.query('productos', 
-      where: 'codigo_barras = ? AND activo = ?', 
-      whereArgs: [code, 1]);
-    return maps.isNotEmpty ? maps.first : null;
+    final maps = await db.query('productos', where: 'codigo_barras = ? AND activo = ?', whereArgs: [code, 1]);
+    return maps.isNotEmpty ? Product.fromMap(maps.first) : null;
   }
 
-  Future<List<Map<String, dynamic>>> getLowStockProducts() async {
+  Future<List<Product>> getLowStockProducts() async {
     final db = await database;
-    return await db.query('productos', 
-      where: 'stock <= stock_minimo AND activo = ?');
+    final maps = await db.query('productos', where: 'stock <= stock_minimo AND activo = ?', whereArgs: [1]);
+    return maps.map((m) => Product.fromMap(m)).toList();
   }
 
-  Future<List<Map<String, dynamic>>> searchProducts(String query) async {
+  Future<List<Product>> searchProducts(String query) async {
     final db = await database;
-    return await db.query('productos',
-      where: '(nombre LIKE ? OR codigo_barras LIKE ?) AND activo = ?',
-      whereArgs: ['%$query%', '%$query%', 1]);
+    final maps = await db.query('productos', where: '(nombre LIKE ? OR codigo_barras LIKE ?) AND activo = ?', whereArgs: ['%$query%', '%$query%', 1]);
+    return maps.map((m) => Product.fromMap(m)).toList();
   }
 
-  Future<int> createProducto(Map<String, dynamic> producto) async {
+  Future<int> createProduct(Product product) async {
     final db = await database;
-    return await db.insert('productos', producto);
+    return await db.insert('productos', product.toMap());
   }
 
-  Future<int> createProduct(Map<String, dynamic> product) async {
-    return createProducto(product);
-  }
-
-  Future<bool> updateProducto(int id, Map<String, dynamic> producto) async {
+  Future<bool> updateProduct(int id, Product product) async {
     final db = await database;
-    final result = await db.update('productos', producto, where: 'id = ?', whereArgs: [id]);
+    final result = await db.update('productos', product.toMap(), where: 'id = ?', whereArgs: [id]);
     return result > 0;
   }
 
-  Future<bool> updateProduct(int id, Map<String, dynamic> product) async {
-    return updateProducto(id, product);
-  }
-
-  Future<bool> deleteProducto(int id) async {
+  Future<bool> deleteProduct(int id) async {
     final db = await database;
     final result = await db.update('productos', {'activo': 0}, where: 'id = ?', whereArgs: [id]);
     return result > 0;
   }
 
-  Future<bool> deleteProduct(int id) async {
-    return deleteProducto(id);
-  }
-
-  Future<bool> updateStock(int productId, double newStock, bool allowNegative) async {
+  Future<bool> updateStock(int productId, int newStock, bool allowNegative) async {
     final db = await database;
     if (!allowNegative && newStock < 0) return false;
-    
-    final result = await db.update(
-      'productos',
-      {'stock': newStock},
-      where: 'id = ?',
-      whereArgs: [productId],
-    );
+    final result = await db.update('productos', {'stock': newStock}, where: 'id = ?', whereArgs: [productId]);
     return result > 0;
   }
 
@@ -130,31 +98,17 @@ class ProductRepository {
   }) async {
     try {
       final db = await database;
-      final productos = await getAllProductos();
-      
-      for (var producto in productos) {
-        double nuevoPrecio = producto['precio_venta'] as double;
-        
+      final products = await getAllProducts();
+      for (var product in products) {
+        double newPrice = product.precioVenta;
         if (updateType == 'percentage') {
-          nuevoPrecio = increase 
-            ? nuevoPrecio * (1 + value / 100)
-            : nuevoPrecio * (1 - value / 100);
+          newPrice = increase ? newPrice * (1 + value / 100) : newPrice * (1 - value / 100);
         } else {
-          nuevoPrecio = increase
-            ? nuevoPrecio + value
-            : nuevoPrecio - value;
+          newPrice = increase ? newPrice + value : newPrice - value;
         }
-        
-        if (nuevoPrecio < 0) nuevoPrecio = 0;
-        
-        await db.update(
-          'productos',
-          {'precio_venta': nuevoPrecio},
-          where: 'id = ?',
-          whereArgs: [producto['id']],
-        );
+        if (newPrice < 0) newPrice = 0;
+        await db.update('productos', {'precio_venta': newPrice}, where: 'id = ?', whereArgs: [product.id]);
       }
-      
       return true;
     } catch (e) {
       return false;
