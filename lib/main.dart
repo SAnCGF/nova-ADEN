@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:nova_aden/core/constants/app_constants.dart';
 import 'package:nova_aden/presentation/pages/splash_page.dart';
+import 'presentation/bloc/producto_bloc.dart';
+import 'presentation/bloc/venta_bloc.dart';
+import 'core/repositories/product_repository.dart';
+import 'core/repositories/sale_repository.dart';
 
 void main() {
-  // WidgetsFlutterBinding se inicializa automáticamente con runApp
-  // No es necesario llamarlo explícitamente a menos que uses plugins antes de runApp
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const NovaAdenApp());
 }
 
@@ -13,52 +17,42 @@ class NovaAdenApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: AppConstants.appName,
-      debugShowCheckedModeBanner: false,
-      
-      // Tema claro
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(AppConstants.primaryColorValue),
-          brightness: Brightness.light,
+    // Instanciar repositorios con los nombres correctos (en inglés)
+    final productRepo = ProductRepository();
+    final saleRepo = SaleRepository();
+    
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ProductoBloc(repository: productRepo)),
+        ChangeNotifierProvider(create: (_) => VentaBloc(repository: saleRepo)),
+      ],
+      child: MaterialApp(
+        title: AppConstants.appName,
+        debugShowCheckedModeBanner: false,
+        
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(AppConstants.primaryColorValue),
+            brightness: Brightness.light,
+          ),
+          useMaterial3: true,
+          cardTheme: CardThemeData(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         ),
-        useMaterial3: true,
-        cardTheme: CardThemeData(
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        
+        darkTheme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(AppConstants.primaryColorValue),
+            brightness: Brightness.dark,
+          ),
+          useMaterial3: true,
         ),
-        appBarTheme: const AppBarTheme(centerTitle: true, elevation: 2),
+        
+        themeMode: ThemeMode.system,
+        home: const SplashPage(),
       ),
-      
-      // Tema oscuro
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(AppConstants.primaryColorValue),
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-        cardTheme: CardThemeData(
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        appBarTheme: const AppBarTheme(centerTitle: true, elevation: 2),
-      ),
-      
-      // Usar tema del sistema
-      themeMode: ThemeMode.system,
-      
-      // Pantalla inicial optimizada
-      home: const SplashPage(),
-      
-      // Prevenir rebuilds innecesarios
-      builder: (context, child) {
-        // Desactivar banner de debug para mejor rendimiento
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
-          child: child!,
-        );
-      },
     );
   }
 }

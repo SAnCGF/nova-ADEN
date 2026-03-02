@@ -1,94 +1,73 @@
 import 'package:flutter/foundation.dart';
-import '../../domain/repositories/producto_repository.dart';
+import 'package:nova_aden/core/repositories/product_repository.dart';
+import 'package:nova_aden/core/models/product.dart';
 
 class ProductoBloc extends ChangeNotifier {
-  final ProductoRepository repository;
-  List<Map<String, dynamic>> _productos = [];
-  bool _isLoading = false;
-  String? _error;
-
-  List<Map<String, dynamic>> get productos => _productos;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
+  final ProductRepository repository;
+  List<Product> _productos = [];
+  List<Product> get productos => _productos;
 
   ProductoBloc({required this.repository});
 
   Future<void> cargarProductos() async {
-    _isLoading = true;
-    notifyListeners();
-
     try {
-      _productos = await repository.getAllProductos();
-      _error = null;
+      _productos = await repository.getAllProducts();
+      notifyListeners();
     } catch (e) {
-      _error = e.toString();
+      _productos = [];
+      notifyListeners();
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 
-  Future<bool> crearProducto(Map<String, dynamic> producto) async {
-    _isLoading = true;
-    notifyListeners();
-
+  Future<bool> crearProducto(Map<String, dynamic> data) async {
     try {
-      producto['fecha_creacion'] = DateTime.now().toIso8601String();
-      await repository.createProducto(producto);
+      final product = Product(
+        id: null,
+        codigo: data['codigo'] ?? '',
+        nombre: data['nombre'] ?? '',
+        descripcion: data['descripcion'] ?? '',
+        costoPromedio: (data['costoPromedio'] ?? 0).toDouble(),
+        precioVenta: (data['precioVenta'] ?? 0).toDouble(),
+        stockActual: (data['stockActual'] ?? 0).toInt(),
+        stockMinimo: (data['stockMinimo'] ?? 0).toInt(),
+        unidadMedida: data['unidadMedida'] ?? '',
+      );
+      await repository.createProduct(product);
       await cargarProductos();
-      _error = null;
-      _isLoading = false;
-      notifyListeners();
       return true;
     } catch (e) {
-      _error = e.toString();
-      _isLoading = false;
-      notifyListeners();
       return false;
     }
   }
 
-  Future<bool> actualizarProducto(int id, Map<String, dynamic> producto) async {
+  Future<bool> actualizarProducto(int id, Map<String, dynamic> data) async {
     try {
-      final exito = await repository.updateProducto(id, producto);
-      if (exito) await cargarProductos();
-      return exito;
+      final product = Product(
+        id: id,
+        codigo: data['codigo'] ?? '',
+        nombre: data['nombre'] ?? '',
+        descripcion: data['descripcion'] ?? '',
+        costoPromedio: (data['costoPromedio'] ?? 0).toDouble(),
+        precioVenta: (data['precioVenta'] ?? 0).toDouble(),
+        stockActual: (data['stockActual'] ?? 0).toInt(),
+        stockMinimo: (data['stockMinimo'] ?? 0).toInt(),
+        unidadMedida: data['unidadMedida'] ?? '',
+      );
+      await repository.updateProduct(id, product);
+      await cargarProductos();
+      return true;
     } catch (e) {
-      _error = e.toString();
-      notifyListeners();
       return false;
     }
   }
 
   Future<bool> eliminarProducto(int id) async {
     try {
-      final exito = await repository.deleteProducto(id);
-      if (exito) await cargarProductos();
-      return exito;
+      await repository.deleteProduct(id);
+      await cargarProductos();
+      return true;
     } catch (e) {
-      _error = e.toString();
-      notifyListeners();
       return false;
     }
-  }
-
-  Future<bool> actualizarStock(int id, double cantidad, bool esEntrada) async {
-    try {
-      final exito = await repository.updateStock(id, cantidad, esEntrada);
-      if (exito) await cargarProductos();
-      return exito;
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-      return false;
-    }
-  }
-
-  List<Map<String, dynamic>> buscarProductos(String query) {
-    if (query.isEmpty) return _productos;
-    return _productos.where((p) {
-      final nombre = p['nombre'].toString().toLowerCase();
-      return nombre.contains(query.toLowerCase());
-    }).toList();
   }
 }
