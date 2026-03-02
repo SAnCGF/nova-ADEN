@@ -30,7 +30,7 @@ jobs:
           cd ..
       
       - name: Build APK Release (UNIVERSAL - CON ICONOS)
-        run: flutter build apk --release --no-tree-shake-icons
+        run: flutter build apk --release --no-tree-shake-icons --no-tree-shake-icons
       
       - name: Verify APK
         run: |

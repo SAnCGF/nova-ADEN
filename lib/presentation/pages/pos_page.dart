@@ -22,6 +22,13 @@ class _POSPageState extends State<POSPage> {
 
   @override
   void initState() {
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Recargar productos cada vez que esta página se vuelve visible
+    _loadProducts();
+  }
     super.initState();
     _loadProducts();
   }
