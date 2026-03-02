@@ -63,7 +63,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 Expanded(
                   child: DashboardCard(
-                    title: 'Productos',
+                    title: 'Inventario',
                     value: '$_totalProductos',
                     icon: Icons.inventory_2,
                     color: const Color(0xFF1E3A5F),
@@ -119,7 +119,7 @@ class _HomePageState extends State<HomePage> {
               childAspectRatio: 1.2,
               children: [
                 ModuleButton(
-                  title: 'Productos',
+                  title: 'Inventario',
                   icon: Icons.inventory_2,
                   color: const Color(0xFF1E3A5F),
                   onPressed: () => Navigator.of(context).push(
