@@ -20,6 +20,12 @@ class _ProductListPageState extends State<ProductListPage> {
 
   @override
   void initState() {
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadProducts();
+  }
     super.initState();
     _loadProducts();
   }

@@ -19,7 +19,12 @@ class CartPage extends StatefulWidget {
 
 class _CartPageState extends State<CartPage> {
   final SaleRepository _saleRepo = SaleRepository();
+  final _customerController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+  
   bool _isProcessing = false;
+  bool _hasCustomer = false;
   
   double get _subtotal {
     return widget.cart.fold(0.0, (sum, item) => sum + (item.product.precioVenta * item.quantity));
@@ -27,6 +32,14 @@ class _CartPageState extends State<CartPage> {
   
   double get _total {
     return _subtotal - widget.discount;
+  }
+
+  @override
+  void dispose() {
+    _customerController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    super.dispose();
   }
 
   void _updateQuantity(int index, int quantity) {
@@ -41,10 +54,96 @@ class _CartPageState extends State<CartPage> {
     setState(() => widget.cart.removeAt(index));
   }
 
+  void _showCustomerDialog() async {
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('👤 Datos del Cliente'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _customerController,
+                decoration: const InputDecoration(
+                  labelText: 'Nombre del Cliente *',
+                  prefixIcon: Icon(Icons.person),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _phoneController,
+                decoration: const InputDecoration(
+                  labelText: 'Teléfono (opcional)',
+                  prefixIcon: Icon(Icons.phone),
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email (opcional)',
+                  prefixIcon: Icon(Icons.email),
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '* Solo el nombre es obligatorio',
+                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              _customerController.clear();
+              _phoneController.clear();
+              _emailController.clear();
+              setState(() => _hasCustomer = false);
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Limpiar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (_customerController.text.isEmpty) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(content: Text('El nombre del cliente es obligatorio')),
+                );
+                return;
+              }
+              setState(() => _hasCustomer = true);
+              Navigator.of(ctx).pop();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1E3A5F),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _completeSale() async {
     if (widget.cart.isEmpty) {
       _showSnackBar('⚠️ El carrito está vacío', Colors.orange);
       return;
+    }
+
+    if (_customerController.text.isNotEmpty && !_hasCustomer) {
+      _hasCustomer = true;
     }
 
     final confirmed = await showDialog<bool>(
@@ -53,9 +152,28 @@ class _CartPageState extends State<CartPage> {
         title: const Text('Confirmar Venta'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Productos: ${widget.cart.length}'),
-            Text('Total: \$${_total.toStringAsFixed(2)}'),
+            if (_hasCustomer && _customerController.text.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('👤 Cliente: ${_customerController.text}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    if (_phoneController.text.isNotEmpty) Text('📱 ${_phoneController.text}'),
+                    if (_emailController.text.isNotEmpty) Text('📧 ${_emailController.text}'),
+                  ],
+                ),
+              ),
+              const Divider(),
+            ],
+            Text('📦 Productos: ${widget.cart.length}'),
+            Text('💰 Total: \$${_total.toStringAsFixed(2)}'),
             const SizedBox(height: 16),
             const Text('¿Desea completar la venta?', style: TextStyle(fontSize: 12)),
           ],
@@ -87,7 +205,9 @@ class _CartPageState extends State<CartPage> {
         'fecha': DateTime.now().toIso8601String(),
         'total': _total,
         'estado': 'completed',
-        'cliente': 'Cliente General',
+        'cliente': _hasCustomer ? _customerController.text : 'Cliente General',
+        'telefono': _phoneController.text,
+        'email': _emailController.text,
       };
 
       final items = widget.cart.map((item) => {
@@ -139,10 +259,16 @@ class _CartPageState extends State<CartPage> {
       appBar: AppBar(
         title: const Text('Carrito de Venta'),
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(false),
-        ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              _hasCustomer ? Icons.check_circle : Icons.person_add,
+              color: _hasCustomer ? Colors.green : Colors.white,
+            ),
+            onPressed: _showCustomerDialog,
+            tooltip: _hasCustomer ? 'Editar cliente' : 'Agregar cliente',
+          ),
+        ],
       ),
       body: widget.cart.isEmpty
           ? const Center(
@@ -153,12 +279,45 @@ class _CartPageState extends State<CartPage> {
                   SizedBox(height: 16),
                   Text('Carrito vacío', style: TextStyle(fontSize: 20, color: Colors.grey)),
                   SizedBox(height: 8),
-                  Text('Agrega productos desde el POS', style: TextStyle(color: Colors.grey)),
+                  Text('Agrega productos desde Punto de Venta', style: TextStyle(color: Colors.grey)),
                 ],
               ),
             )
           : Column(
               children: [
+                if (_hasCustomer && _customerController.text.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.green.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.green),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Cliente: ${_customerController.text}',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              if (_phoneController.text.isNotEmpty)
+                                Text('📱 ${_phoneController.text}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.edit, size: 20),
+                          onPressed: _showCustomerDialog,
+                        ),
+                      ],
+                    ),
+                  ),
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
