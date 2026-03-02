@@ -57,9 +57,7 @@ class _HomePageState extends State<HomePage> {
             icon: const Icon(Icons.settings),
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const SettingsPage()),
             ),
-            tooltip: 'Configuración',
           ),
         ],
       ),
@@ -253,15 +251,12 @@ class _HomePageState extends State<HomePage> {
               },
             ),
             
-            // Módulo Configuración
             ModuleButton(
-              title: 'Configuración',
               icon: Icons.settings,
               color: Colors.grey,
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const SettingsPage()),
                 );
               },
             ),
