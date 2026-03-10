@@ -18,58 +18,23 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(AppConstants.appName),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage())),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text(AppConstants.appName), centerTitle: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Nova ADEN', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 24),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 1.2,
-              children: [
-                _btn('Productos', Icons.inventory_2, Colors.blue, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProductListPage()))),
-                _btn('Punto de Venta', Icons.shopping_cart, Colors.green, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const POSPage()))),
-                _btn('Compras', Icons.shopping_bag, Colors.orange, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PurchasePage()))),
-                _btn('Ventas', Icons.receipt_long, Colors.teal, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SalesListPage()))),
-                _btn('Proveedores', Icons.business, Colors.brown, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SupplierPage()))),
-                _btn('Reportes', Icons.dashboard, Colors.purple, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsPage()))),
-              ],
-            ),
-          ],
-        ),
+        child: Column(children: [
+          GridView.count(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), crossAxisCount: 2, mainAxisSpacing: 16, crossAxisSpacing: 16, childAspectRatio: 1.2, children: [
+            _btn('Productos', Icons.inventory_2, Colors.blue, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProductListPage()))),
+            _btn('Punto de Venta', Icons.shopping_cart, Colors.green, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const POSPage()))),
+            _btn('Compras', Icons.shopping_bag, Colors.orange, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PurchasePage()))),
+            _btn('Ventas', Icons.receipt_long, Colors.teal, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SalesListPage()))),
+            _btn('Proveedores', Icons.business, Colors.brown, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SupplierPage()))),
+            _btn('Reportes', Icons.dashboard, Colors.purple, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsPage()))),
+          ]),
+        ]),
       ),
     );
   }
-
   Widget _btn(String t, IconData i, Color c, VoidCallback f) {
-    return InkWell(
-      onTap: f,
-      child: Card(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(i, size: 48, color: c),
-            const SizedBox(height: 8),
-            Text(t, textAlign: TextAlign.center),
-          ],
-        ),
-      ),
-    );
+    return InkWell(onTap: f, child: Card(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(i, size: 48, color: c), const SizedBox(height: 8), Text(t)])));
   }
 }
