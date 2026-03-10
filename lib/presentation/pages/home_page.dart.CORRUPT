@@ -1,0 +1,166 @@
+import 'package:flutter/material.dart';
+import 'package:nova_aden/core/constants/app_constants.dart';
+import '../bloc/auth_bloc.dart';
+import './product_list_page.dart';
+import './pos_page.dart';
+import './purchase_page.dart';
+import './sales_list_page.dart';
+import './reports_page.dart';
+import './settings_page.dart';
+import './supplier_page.dart';
+
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int _alertasStock = 0;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() => _isLoading = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(AppConstants.appName),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SettingsPage()),
+            ),
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {},
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              pinned: true,
+              floating: false,
+              title: const Text('Nova ADEN'),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  _buildStatsCards(),
+                  const SizedBox(height: 24),
+                  _buildModuleGrid(),
+                  const SizedBox(height: 24),
+                  const Padding(
+                    padding: EdgeInsets.only(left: 8, bottom: 8),
+                    child: Text(
+                      '🔔 Alertas de Stock',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+                ]),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatsCards() {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 1.5,
+      children: [
+        _buildStatCard('Productos', '0', Icons.inventory_2_rounded, Colors.blue),
+        _buildStatCard('Ventas Hoy', '\$0.00', Icons.receipt_long_rounded, Colors.green),
+        _buildStatCard('Alertas Stock', '$_alertasStock', Icons.warning_amber_rounded, Colors.orange),
+        _buildStatCard('Ingresos', '\$0.00', Icons.attach_money_rounded, Colors.teal),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+    return Card(
+      elevation: 4,
+      child: ListTile(
+        leading: CircleAvatar(backgroundColor: color.withOpacity(0.2), child: Icon(icon, color: color)),
+        title: Text(title, style: const TextStyle(fontSize: 12)),
+        subtitle: Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+      ),
+    );
+  }
+
+  Widget _buildModuleGrid() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Módulos', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 1.2,
+          children: [
+            _buildModuleButton('Productos', Icons.inventory_2_rounded, Colors.blue, () {
+              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProductListPage()));
+            }),
+            _buildModuleButton('Punto de Venta', Icons.shopping_cart_rounded, Colors.green, () {
+              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PosPage()));
+            }),
+            _buildModuleButton('Compras', Icons.shopping_bag_rounded, Colors.orange, () {
+              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PurchasePage()));
+            }),
+            _buildModuleButton('Ventas', Icons.receipt_long_rounded, Colors.teal, () {
+              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SalesListPage()));
+            }),
+            _buildModuleButton('Proveedores', Icons.business_rounded, Colors.brown, () {
+              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SupplierPage()));
+            }),
+            _buildModuleButton('Reportes', Icons.dashboard_rounded, Colors.purple, () {
+              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReportsPage()));
+            }),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildModuleButton(String title, IconData icon, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Card(
+        elevation: 4,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, size: 48, color: color),
+            ),
+            const SizedBox(height: 8),
+            Text(title, textAlign: TextAlign.center),
+          ],
+        ),
+      ),
+    );
+  }
+}

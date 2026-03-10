@@ -62,9 +62,9 @@ class _SupplierPageState extends State<SupplierPage> {
 
     final supplier = Supplier(
       name: _nameController!.text.trim(),
-      phone: _phoneController?.text.trim() ?? '',
-      email: _emailController?.text.trim() ?? '',
-      address: _addressController?.text.trim() ?? '',
+      phone: _phoneController?.text ?? '',
+      email: _emailController?.text ?? '',
+      address: _addressController?.text ?? '',
     );
 
     try {
@@ -90,9 +90,6 @@ class _SupplierPageState extends State<SupplierPage> {
       _isEditing = true;
       _editingId = supplier.id;
       _nameController?.text = supplier.name;
-      _phoneController?.text = supplier.phone;
-      _emailController?.text = supplier.email;
-      _addressController?.text = supplier.address;
     });
   }
 

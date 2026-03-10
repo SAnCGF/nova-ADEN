@@ -1,22 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:nova_aden/presentation/pages/product_movements_report_page.dart';
-import 'package:nova_aden/presentation/pages/inventory_report_page.dart';
-import 'package:nova_aden/presentation/pages/product_movements_report_page.dart';
-import 'package:nova_aden/presentation/pages/sales_report_page.dart';
-import 'package:nova_aden/presentation/pages/product_movements_report_page.dart';
-import 'package:nova_aden/presentation/pages/profit_report_page.dart';
-import 'package:nova_aden/presentation/pages/product_movements_report_page.dart';
-import 'package:nova_aden/presentation/pages/purchases_report_page.dart';
-import 'package:nova_aden/presentation/pages/product_movements_report_page.dart';
+import 'package:nova_aden/core/repositories/report_repository.dart';
+import './inventory_report_page.dart';
+import './sales_report_page.dart';
+import './profit_report_page.dart';
+import './purchases_report_page.dart';
+import './product_movements_report_page.dart';
 
-class ReportsPage extends StatefulWidget {
+class ReportsPage extends StatelessWidget {
   const ReportsPage({super.key});
 
-  @override
-  State<ReportsPage> createState() => _ReportsPageState();
-}
-
-class _ReportsPageState extends State<ReportsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,160 +20,55 @@ class _ReportsPageState extends State<ReportsPage> {
         padding: const EdgeInsets.all(16),
         child: GridView.count(
           crossAxisCount: 2,
-          crossAxisSpacing: 16,
           mainAxisSpacing: 16,
-          childAspectRatio: 1.2,
+          crossAxisSpacing: 16,
+          childAspectRatio: 1.3,
           children: [
-            _buildReportCard(
-              context,
-              title: 'Inventario',
-              subtitle: 'Stock valorado',
-              icon: Icons.inventory_2,
-              color: Colors.blue,
-              page: const InventoryReportPage(),
-            ),
-            _buildReportCard(
-              context,
-              title: 'Ventas',
-              subtitle: 'Detalle completo',
-              icon: Icons.receipt_long,
-              color: Colors.green,
-              page: const SalesReportPage(),
-            ),
-            _buildReportCard(
-              context,
-              title: 'Ganancias',
-              subtitle: 'Rentabilidad',
-              icon: Icons.trending_up,
-              color: Colors.purple,
-              page: const ProfitReportPage(),
-            ),
-            _buildReportCard(
-              context,
-              title: 'Compras',
-              subtitle: 'Por proveedor',
-              icon: Icons.shopping_cart,
-              color: Colors.orange,
-              page: const PurchasesReportPage(),
-            ),
-            _buildReportCard(
-              context,
-              title: 'Movimientos',
-              subtitle: 'Por producto',
-              icon: Icons.swap_horiz,
-              color: Colors.teal,
-              page: const ProductMovementsReportPage(),
-            ),
-            _buildReportCard(
-              context,
-              title: 'Exportar CSV',
-              subtitle: 'Todos los datos',
-              icon: Icons.file_download,
-              color: Colors.indigo,
-              onTap: () => _showExportOptions(),
-            ),
+            _buildReportTile(context, 'Inventario', Icons.inventory_2, Colors.blue, () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const InventoryReportPage()),
+            )),
+            _buildReportTile(context, 'Ventas', Icons.receipt_long, Colors.green, () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SalesReportPage()),
+            )),
+            _buildReportTile(context, 'Ganancias', Icons.trending_up, Colors.purple, () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ProfitReportPage()),
+            )),
+            _buildReportTile(context, 'Compras', Icons.shopping_cart, Colors.orange, () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const PurchasesReportPage()),
+            )),
+            _buildReportTile(context, 'Movimientos', Icons.swap_horiz, Colors.teal, () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ProductMovementsReportPage()),
+            )),
+            _buildReportTile(context, 'Exportar CSV', Icons.download, Colors.indigo, () {
+              // Simular exportación
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('📊 Exportando todos los datos a CSV...')),
+              );
+            }),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildReportCard(BuildContext context, {
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    Widget? page,
-    VoidCallback? onTap,
-  }) {
+  Widget _buildReportTile(BuildContext context, String title, IconData icon, Color color, VoidCallback onTap) {
     return Card(
       elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        onTap: onTap ?? () {
-          if (page != null) {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
-          }
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [color, color.withOpacity(0.7)],
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 48, color: Colors.white),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showExportOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('Exportar Datos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ),
-            ListTile(
-              leading: const Icon(Icons.inventory_2, color: Colors.blue),
-              title: const Text('Inventario'),
-              subtitle: const Text('Todos los productos'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showSnackBar('Exportando inventario...');
-                // Implementar exportación
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.receipt_long, color: Colors.green),
-              title: const Text('Ventas'),
-              subtitle: const Text('Últimos 30 días'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showSnackBar('Exportando ventas...');
-                // Implementar exportación
-              },
-            ),
-            const SizedBox(height: 16),
+            Icon(icon, size: 48, color: color),
+            const SizedBox(height: 8),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text('Ver reporte', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
           ],
         ),
       ),
-    );
-  }
-
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
     );
   }
 }

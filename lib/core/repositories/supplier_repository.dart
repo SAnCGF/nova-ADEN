@@ -1,6 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import '.../models/supplier.dart';
+import '../../core/models/supplier.dart';
 
 class SupplierRepository {
   static Database? _database;
@@ -53,19 +53,5 @@ class SupplierRepository {
     final maps = await db.query('proveedores', where: 'id = ?', whereArgs: [id]);
     if (maps.isEmpty) return null;
     return Supplier.fromMap(maps.first);
-  }
-
-  // Histórico de compras por proveedor
-  Future<List<Map<String, dynamic>>> getSupplierPurchaseHistory(int supplierId) async {
-    final db = await database;
-    final results = await db.rawQuery('''
-      SELECT c.*, COUNT(vd.id) as total_items
-      FROM compras c
-      LEFT JOIN compras_detalle vd ON c.id = vd.compra_id
-      WHERE c.proveedor_id = ?
-      GROUP BY c.id
-      ORDER BY c.fecha DESC
-    ''', [supplierId]);
-    return results;
   }
 }

@@ -141,7 +141,6 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 16),
           
-          // Sección: Licencia
           _buildSectionTitle('Licencia'),
           Card(
             child: Consumer<AuthBloc>(

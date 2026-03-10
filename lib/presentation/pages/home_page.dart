@@ -1,163 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:nova_aden/core/constants/app_constants.dart';
-import 'package:nova_aden/presentation/widgets/dashboard_card.dart';
-import 'package:nova_aden/presentation/widgets/module_button.dart';
-import 'package:nova_aden/presentation/pages/product_list_page.dart';
-import 'package:nova_aden/presentation/pages/pos_page.dart';
-import 'package:nova_aden/presentation/pages/purchase_page.dart';
-import 'package:nova_aden/presentation/pages/reports_page.dart';
-import 'package:nova_aden/presentation/pages/sales_list_page.dart';
-import 'package:nova_aden/presentation/pages/settings_page.dart';
-import 'package:provider/provider.dart';
-import '../bloc/producto_bloc.dart';
-import '../bloc/venta_bloc.dart';
+import './product_list_page.dart';
+import './pos_page.dart';
+import './purchase_page.dart';
+import './sales_list_page.dart';
+import './reports_page.dart';
+import './settings_page.dart';
+import './supplier_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
-
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  int _totalProductos = 0;
-  int _ventasHoy = 0;
-  int _alertasStock = 0;
-  double _ingresosDia = 0.0;
-
-  @override
-  void initState() {
-    super.initState();
-    _cargarDatos();
-  }
-
-  void _cargarDatos() {
-    setState(() {
-      _totalProductos = context.read<ProductoBloc>().productos.length;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(AppConstants.appName),
-        centerTitle: true,
-        actions: [
-          // ✅ Botón de configuración SOLO en AppBar
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SettingsPage()),
-            ),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text(AppConstants.appName), centerTitle: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Dashboard de métricas
-            Row(
-              children: [
-                Expanded(
-                  child: DashboardCard(
-                    title: 'Inventario',
-                    value: '$_totalProductos',
-                    icon: Icons.inventory_2,
-                    color: const Color(0xFF1E3A5F),
-                  ),
-                ),
-                Expanded(
-                  child: DashboardCard(
-                    title: 'Ventas Hoy',
-                    value: '$_ventasHoy',
-                    icon: Icons.shopping_cart,
-                    color: const Color(0xFF22C55E),
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: DashboardCard(
-                    title: 'Alertas Stock',
-                    value: '$_alertasStock',
-                    icon: Icons.warning_amber,
-                    color: const Color(0xFFF59E0B),
-                  ),
-                ),
-                Expanded(
-                  child: DashboardCard(
-                    title: 'Ingresos',
-                    value: '\$$_ingresosDia',
-                    icon: Icons.attach_money,
-                    color: const Color(0xFF3B82F6),
-                  ),
-                ),
-              ],
-            ),
-            
-            // Módulo de botones - ✅ SIN botón de configuración aquí
-            const Text(
-              'Módulos',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.2,
-              children: [
-                ModuleButton(
-                  title: 'Inventario',
-                  icon: Icons.inventory_2,
-                  color: const Color(0xFF1E3A5F),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const ProductListPage()),
-                  ),
-                ),
-                ModuleButton(
-                  title: 'Punto de Venta',
-                  icon: Icons.point_of_sale,
-                  color: const Color(0xFF22C55E),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const POSPage()),
-                  ),
-                ),
-                ModuleButton(
-                  title: 'Compras',
-                  icon: Icons.shopping_bag,
-                  color: const Color(0xFF8B5CF6),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const PurchasePage()),
-                  ),
-                ),
-                ModuleButton(
-                  title: 'Ventas',
-                  icon: Icons.receipt_long,
-                  color: const Color(0xFF3B82F6),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SalesListPage()),
-                  ),
-                ),
-                ModuleButton(
-                  title: 'Reportes',
-                  icon: Icons.bar_chart,
-                  color: const Color(0xFFF59E0B),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const ReportsPage()),
-                  ),
-                ),
-                // ✅ Configuración REMOVIDA de aquí - solo está en AppBar
-              ],
-            ),
-          ],
-        ),
+        child: Column(children: [
+          GridView.count(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), crossAxisCount: 2, mainAxisSpacing: 16, crossAxisSpacing: 16, childAspectRatio: 1.2, children: [
+            InkWell(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProductListPage())), child: Card(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.inventory_2, size: 48, color: Colors.blue), const SizedBox(height: 8), const Text('Productos')]))),
+            InkWell(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const POSPage())), child: Card(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.shopping_cart, size: 48, color: Colors.green), const SizedBox(height: 8), const Text('Punto de Venta')]))),
+            InkWell(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PurchasePage())), child: Card(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.shopping_bag, size: 48, color: Colors.orange), const SizedBox(height: 8), const Text('Compras')]))),
+            InkWell(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SalesListPage())), child: Card(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.receipt_long, size: 48, color: Colors.teal), const SizedBox(height: 8), const Text('Ventas')]))),
+            InkWell(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SupplierPage())), child: Card(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.business, size: 48, color: Colors.brown), const SizedBox(height: 8), const Text('Proveedores')]))),
+            InkWell(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsPage())), child: Card(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.dashboard, size: 48, color: Colors.purple), const SizedBox(height: 8), const Text('Reportes')]))),
+          ]),
+        ]),
       ),
     );
   }

@@ -107,7 +107,7 @@ class _ProductListPageState extends State<ProductListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Inventario'),
+        title: const Text('Productos'),
         actions: [
           IconButton(
             icon: Icon(
