@@ -130,10 +130,10 @@ class _InventoryReportPageState extends State<InventoryReportPage> {
   }
 
   Future<void> _exportCSV() async {
-    final path = await _repository.exportInventoryToCSV();
-    if (path== true && mounted) {
+    final csvData = await _repository.exportInventoryToCSV(_report['products'] as List<Map<String, dynamic>>);
+    if (csvData.isNotEmpty && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('✅ Exportado a: $path'), duration: const Duration(seconds: 4)),
+        SnackBar(content: Text('✅ CSV exportado exitosamente'), duration: const Duration(seconds: 4)),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

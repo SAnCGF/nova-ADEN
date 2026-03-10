@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:nova_aden/presentation/pages/product_movements_report_page.dart';
 import 'package:nova_aden/presentation/pages/inventory_report_page.dart';
+import 'package:nova_aden/presentation/pages/product_movements_report_page.dart';
 import 'package:nova_aden/presentation/pages/sales_report_page.dart';
+import 'package:nova_aden/presentation/pages/product_movements_report_page.dart';
 import 'package:nova_aden/presentation/pages/profit_report_page.dart';
+import 'package:nova_aden/presentation/pages/product_movements_report_page.dart';
 import 'package:nova_aden/presentation/pages/purchases_report_page.dart';
+import 'package:nova_aden/presentation/pages/product_movements_report_page.dart';
 
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
@@ -65,7 +70,7 @@ class _ReportsPageState extends State<ReportsPage> {
               subtitle: 'Por producto',
               icon: Icons.swap_horiz,
               color: Colors.teal,
-              page: const ReportsPage(),
+              page: const ProductMovementsReportPage(),
             ),
             _buildReportCard(
               context,

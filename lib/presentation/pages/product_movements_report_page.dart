@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:nova_aden/core/repositories/report_repository.dart';
-import 'package:nova_aden/core/repositories/product_repository.dart';
-import 'package:nova_aden/core/models/product.dart';
 import 'package:intl/intl.dart';
 
 class ProductMovementsReportPage extends StatefulWidget {
@@ -13,132 +11,98 @@ class ProductMovementsReportPage extends StatefulWidget {
 
 class _ProductMovementsReportPageState extends State<ProductMovementsReportPage> {
   final ReportRepository _repository = ReportRepository();
-  final ProductRepository _productRepo = ProductRepository();
-  Product? _selectedProduct;
-  Map<String, dynamic> _report = {};
-  bool _isLoading = false;
+  List<Map<String, dynamic>> _report = [];
+  DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
+  DateTime _endDate = DateTime.now();
+  bool _isLoading = true;
 
-  Future<void> _selectProduct() async {
-    final products = await _productRepo.getAllProducts();
-    final selected = await showDialog<Product>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Seleccionar Producto'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: products.length,
-            itemBuilder: (context, index) => ListTile(
-              title: Text(products[index].name),
-              subtitle: Text('Stock: ${products[index].stock}'),
-              onTap: () => Navigator.pop(ctx, products[index]),
-            ),
-          ),
-        ),
-      ),
-    );
-    if (selected != null) {
-      setState(() => _selectedProduct = selected);
-      _loadReport();
-    }
+  @override
+  void initState() {
+    super.initState();
+    _loadReport();
   }
 
   Future<void> _loadReport() async {
-    if (_selectedProduct == null) return;
     setState(() => _isLoading = true);
-    _report = await _repository.getProductMovementsReport(0);
+    _report = await _repository.getProductMovementsReport(
+      startDate: _startDate,
+      endDate: _endDate,
+    );
     setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Movimientos por Producto'),
-        actions: [IconButton(icon: const Icon(Icons.search), onPressed: _selectProduct)],
-      ),
-      body: _selectedProduct == null
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.swap_horiz, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  const Text('Selecciona un producto para ver sus movimientos'),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: _selectProduct,
-                    icon: const Icon(Icons.search),
-                    label: const Text('Buscar Producto'),
+      appBar: AppBar(title: const Text('Movimientos de Productos')),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: _startDate,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now(),
+                            );
+                            if (date != null) {
+                              setState(() => _startDate = date);
+                              _loadReport();
+                            }
+                          },
+                          icon: const Icon(Icons.calendar_today),
+                          label: Text('Inicio: ${DateFormat('dd/MM/yyyy').format(_startDate)}'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: _endDate,
+                              firstDate: _startDate,
+                              lastDate: DateTime.now(),
+                            );
+                            if (date != null) {
+                              setState(() => _endDate = date);
+                              _loadReport();
+                            }
+                          },
+                          icon: const Icon(Icons.calendar_today),
+                          label: Text('Fin: ${DateFormat('dd/MM/yyyy').format(_endDate)}'),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            )
-          : _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Column(
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      margin: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFF1E3A5F), Color(0xFF3D7AB0)]),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(_selectedProduct!.name, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _buildStatItem('Stock Actual', '${_selectedProduct!.stock}'),
-                              _buildStatItem('Entradas', '${_report['totalEntries'] ?? 0}'),
-                              _buildStatItem('Salidas', '${_report['totalExits'] ?? 0}'),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: (_report['movements'] as List?)?.isEmpty ?? true
-                          ? const Center(child: Text('No hay movimientos registrados'))
-                          : ListView.builder(
-                              itemCount: (_report['movements'] as List).length,
-                              itemBuilder: (context, index) {
-                                final movement = _report['movements'][index];
-                                return Card(
-                                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  child: ListTile(
-                                    leading: CircleAvatar(
-                                      backgroundColor: movement['type'] == 'Entrada' ? Colors.green : Colors.red,
-                                      child: Icon(movement['type'] == 'Entrada' ? Icons.add : Icons.remove, color: Colors.white),
-                                    ),
-                                    title: Text('${movement['type']}: ${movement['quantity']} und'),
-                                    subtitle: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(DateFormat('dd/MM/yyyy HH:mm').format(movement['date'])),
-                                        Text('Motivo: ${movement['reason']}'),
-                                      ],
-                                    ),
-                                    trailing: Text(movement['reference']),
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
-                  ],
                 ),
+                Expanded(
+                  child: _report.isEmpty
+                      ? const Center(child: Text('No hay movimientos'))
+                      : ListView.builder(
+                          itemCount: _report.length,
+                          itemBuilder: (ctx, index) {
+                            final row = _report[index];
+                            return ListTile(
+                              title: Text(row['producto_nombre']?.toString() ?? 'N/A'),
+                              subtitle: Text('Cantidad: ${(row['cantidad'] as num).toInt()}'),
+                              trailing: Text(
+                                '\$${(row['precio_unitario'] as num).toStringAsFixed(2)}',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
     );
-  }
-
-  Widget _buildStatItem(String label, String value) {
-    return Column(children: [
-      Text(value, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-      Text(label, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
-    ]);
   }
 }

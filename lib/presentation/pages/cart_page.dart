@@ -20,8 +20,8 @@ class CartPage extends StatefulWidget {
 class _CartPageState extends State<CartPage> {
   final SaleRepository _saleRepo = SaleRepository();
   final _customerController = TextEditingController();
+  final _idController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _emailController = TextEditingController();
   
   bool _isProcessing = false;
   bool _hasCustomer = false;
@@ -37,8 +37,8 @@ class _CartPageState extends State<CartPage> {
   @override
   void dispose() {
     _customerController.dispose();
+    _idController.dispose();
     _phoneController.dispose();
-    _emailController.dispose();
     super.dispose();
   }
 
@@ -73,6 +73,16 @@ class _CartPageState extends State<CartPage> {
               ),
               const SizedBox(height: 12),
               TextField(
+                controller: _idController,
+                decoration: const InputDecoration(
+                  labelText: 'Carnet de Identidad *',
+                  prefixIcon: Icon(Icons.badge),
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 12),
+              TextField(
                 controller: _phoneController,
                 decoration: const InputDecoration(
                   labelText: 'Teléfono (opcional)',
@@ -81,19 +91,9 @@ class _CartPageState extends State<CartPage> {
                 ),
                 keyboardType: TextInputType.phone,
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email (opcional)',
-                  prefixIcon: Icon(Icons.email),
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.emailAddress,
-              ),
               const SizedBox(height: 8),
               Text(
-                '* Solo el nombre es obligatorio',
+                '* Nombre y Carnet son obligatorios',
                 style: TextStyle(fontSize: 11, color: Colors.grey[600]),
               ),
             ],
@@ -103,8 +103,8 @@ class _CartPageState extends State<CartPage> {
           TextButton(
             onPressed: () {
               _customerController.clear();
+              _idController.clear();
               _phoneController.clear();
-              _emailController.clear();
               setState(() => _hasCustomer = false);
               Navigator.of(ctx).pop();
             },
@@ -119,6 +119,12 @@ class _CartPageState extends State<CartPage> {
               if (_customerController.text.isEmpty) {
                 ScaffoldMessenger.of(ctx).showSnackBar(
                   const SnackBar(content: Text('El nombre del cliente es obligatorio')),
+                );
+                return;
+              }
+              if (_idController.text.isEmpty) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(content: Text('El carnet de identidad es obligatorio')),
                 );
                 return;
               }
@@ -165,8 +171,8 @@ class _CartPageState extends State<CartPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('👤 Cliente: ${_customerController.text}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    if (_idController.text.isNotEmpty) Text('🆔 Carnet: ${_idController.text}'),
                     if (_phoneController.text.isNotEmpty) Text('📱 ${_phoneController.text}'),
-                    if (_emailController.text.isNotEmpty) Text('📧 ${_emailController.text}'),
                   ],
                 ),
               ),
@@ -206,8 +212,8 @@ class _CartPageState extends State<CartPage> {
         'total': _total,
         'estado': 'completed',
         'cliente': _hasCustomer ? _customerController.text : 'Cliente General',
+        'identidad': _idController.text,
         'telefono': _phoneController.text,
-        'email': _emailController.text,
       };
 
       final items = widget.cart.map((item) => {
@@ -306,8 +312,8 @@ class _CartPageState extends State<CartPage> {
                                 'Cliente: ${_customerController.text}',
                                 style: const TextStyle(fontWeight: FontWeight.bold),
                               ),
-                              if (_phoneController.text.isNotEmpty)
-                                Text('📱 ${_phoneController.text}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                              if (_idController.text.isNotEmpty)
+                                Text('🆔 ${_idController.text}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                             ],
                           ),
                         ),

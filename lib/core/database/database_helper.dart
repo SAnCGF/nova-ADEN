@@ -208,7 +208,7 @@ class DatabaseHelper {
   }
 
   Future<void> _initializeLossReasons(Database db) async {
-    final reasons = LossReason.getPredefinedReasons();
+    final reasons = LossReason.defaults;
     final batch = db.batch();
     for (final reason in reasons) {
       batch.insert('loss_reasons', reason.toMap(), conflictAlgorithm: ConflictAlgorithm.ignore);

@@ -114,4 +114,59 @@ class ProductRepository {
       return false;
     }
   }
+
+  // RF 50: Calcular costo promedio ponderado
+  Future<double> calculateWeightedAverageCost(int productId) async {
+    final db = await database;
+    final purchases = await db.rawQuery(
+      "SELECT cantidad, costo_unitario FROM compras_detalle WHERE producto_id = ? ORDER BY fecha ASC",
+      [productId],
+    );
+    if (purchases.isEmpty) return 0.0;
+    double totalCost = 0.0;
+    int totalQuantity = 0;
+    for (var purchase in purchases) {
+      final quantity = purchase["cantidad"] as int;
+      final cost = (purchase["costo_unitario"] as num).toDouble();
+      totalCost += cost * quantity;
+      totalQuantity += quantity;
+    }
+    return totalQuantity > 0 ? totalCost / totalQuantity : 0.0;
+  }
+
+  // RF 51: Sugerir precio por margen
+  double suggestPriceByMargin(double cost, double marginPercent) {
+    if (marginPercent <= 0 || marginPercent >= 100) {
+      throw ArgumentError("El margen debe estar entre 0 y 100");
+    }
+    return cost / (1 - (marginPercent / 100));
+  }
+
+  double calculateMargin(double cost, double price) {
+    if (price == 0) return 0.0;
+    return ((price - cost) / price) * 100;
+  }
+
+  // RF 59: Ajustar stock tras conteo físico
+  Future<int> adjustStock(int productId, int newStock, String reason, {String? notes}) async {
+    final db = await database;
+    final product = await getProductById(productId);
+    if (product == null) throw Exception("Producto no encontrado");
+    final previousStock = product.stockActual;
+    final difference = newStock - previousStock;
+    await db.update("productos", {"stockActual": newStock}, where: "id = ?", whereArgs: [productId]);
+    await db.insert("ajustes_stock", {
+      "product_id": productId,
+      "product_name": product.nombre,
+      "previous_stock": previousStock,
+      "new_stock": newStock,
+      "difference": difference,
+      "reason": reason,
+      "notes": notes,
+      "adjusted_at": DateTime.now().toIso8601String(),
+    });
+    return difference;
+  }
+
+
 }

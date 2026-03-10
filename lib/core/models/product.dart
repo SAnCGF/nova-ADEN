@@ -3,10 +3,12 @@ class Product {
   final String nombre;
   final String codigo;
   final double costoPromedio;
+  final bool isFavorite;
   final double precioVenta;
   final int stockActual;
   final int stockMinimo;
   final String unidadMedida;
+  final bool isActive;
   final String? descripcion;
   final bool activo;
 
@@ -15,10 +17,12 @@ class Product {
     required this.nombre,
     required this.codigo,
     required this.costoPromedio,
+    this.isFavorite = false,
     required this.precioVenta,
     required this.stockActual,
     required this.stockMinimo,
     required this.unidadMedida,
+    this.isActive = true,
     this.descripcion,
     this.activo = true,
   });
