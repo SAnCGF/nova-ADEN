@@ -1,15 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:nova_aden/presentation/pages/feedback_page.dart';
-import 'package:nova_aden/presentation/pages/help_page.dart';
 import 'package:nova_aden/core/constants/app_constants.dart';
-import 'package:nova_aden/presentation/pages/feedback_page.dart';
-import 'package:nova_aden/presentation/pages/help_page.dart';
 import 'package:provider/provider.dart';
-import 'package:nova_aden/presentation/pages/feedback_page.dart';
-import 'package:nova_aden/presentation/pages/help_page.dart';
 import '../bloc/auth_bloc.dart';
-import 'package:nova_aden/presentation/pages/feedback_page.dart';
-import 'package:nova_aden/presentation/pages/help_page.dart';
+import 'feedback_page.dart';
+import 'help_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -20,6 +14,12 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   ThemeMode _currentTheme = ThemeMode.system;
+  
+  // Configuración de moneda
+  String _selectedCurrency = 'CUP';
+  
+  // Configuración de impuesto
+  double _taxRate = 0.0;
 
   @override
   void initState() {
@@ -31,8 +31,7 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() {
       _currentTheme = theme;
     });
-    // Actualizar el tema en toda la app
-    (context as Element).rebuild();
+    _showSnackBar('✅ Tema cambiado a ${theme.name}');
   }
 
   @override
@@ -60,21 +59,20 @@ class _SettingsPageState extends State<SettingsPage> {
                     items: const [
                       DropdownMenuItem(
                         value: ThemeMode.system,
-                        child: Text('Sistema'),
+                        child: const Text('Sistema'),
                       ),
                       DropdownMenuItem(
                         value: ThemeMode.light,
-                        child: Text('Claro'),
+                        child: const Text('Claro'),
                       ),
                       DropdownMenuItem(
                         value: ThemeMode.dark,
-                        child: Text('Oscuro'),
+                        child: const Text('Oscuro'),
                       ),
                     ],
                     onChanged: (value) {
                       if (value != null) {
                         _changeTheme(value);
-                        _showSnackBar('✅ Tema actualizado', Colors.green);
                       }
                     },
                   ),
@@ -84,21 +82,59 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 16),
           
-          // Sección: Información de la App
-          _buildSectionTitle('Información'),
+          // Sección: Moneda
+          _buildSectionTitle('Moneda'),
           Card(
             child: Column(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.info_outline),
-                  title: const Text('Versión'),
-                  trailing: Text(AppConstants.appVersion),
+                  leading: const Icon(Icons.currency_exchange),
+                  title: const Text('Moneda Principal'),
+                  subtitle: const Text('Selecciona la moneda de operación'),
+                  trailing: DropdownButton<String>(
+                    value: _selectedCurrency,
+                    underline: const SizedBox(),
+                    items: const [
+                      DropdownMenuItem(value: 'CUP', child: Text('Peso Cubano')),
+                      DropdownMenuItem(value: 'USD', child: Text('Dólar Estadounidense')),
+                      DropdownMenuItem(value: 'EUR', child: Text('Euro')),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => _selectedCurrency = value);
+                        _showSnackBar('✅ Moneda cambiada a $value');
+                      }
+                    },
+                  ),
                 ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.business),
-                  title: const Text('Aplicación'),
-                  trailing: Text(AppConstants.appName),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Sección: Impuestos
+          _buildSectionTitle('Impuestos'),
+          Card(
+            child: Column(
+              children: [
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Tasa de Impuesto (%)',
+                    prefixIcon: Icon(Icons.tune),
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    final rate = double.tryParse(value) ?? 0.0;
+                    setState(() => _taxRate = rate);
+                  },
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Márgenes de ganancia sugeridos se calculan con este impuesto.',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
                 ),
               ],
             ),
@@ -108,11 +144,11 @@ class _SettingsPageState extends State<SettingsPage> {
           // Sección: Licencia
           _buildSectionTitle('Licencia'),
           Card(
-            child: Column(
-              children: [
-                Consumer<AuthBloc>(
-                  builder: (context, authBloc, child) {
-                    return ListTile(
+            child: Consumer<AuthBloc>(
+              builder: (context, authBloc, child) {
+                return Column(
+                  children: [
+                    ListTile(
                       leading: Icon(
                         authBloc.isLicenseActive 
                           ? Icons.check_circle 
@@ -130,79 +166,63 @@ class _SettingsPageState extends State<SettingsPage> {
                           : ElevatedButton(
                               onPressed: () {
                                 Navigator.of(context).pop();
-                                // Navegar a activación de licencia
                               },
                               child: const Text('Activar'),
                             ),
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(Icons.info_outline),
+                      title: const Text('Versión'),
+                      trailing: Text(AppConstants.appVersion),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.business),
+                      title: const Text('Aplicación'),
+                      trailing: Text(AppConstants.appName),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Sección: Ayuda y Soporte
+          _buildSectionTitle('Ayuda y Soporte'),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.feedback),
+                  title: const Text('Enviar Feedback'),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const FeedbackPage()),
                     );
                   },
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          // Sección: Datos
-          _buildSectionTitle('Datos'),
-          Card(
-            child: Column(
-              children: [
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.help_outline),
+                  title: const Text('Ayuda'),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const HelpPage()),
+                    );
+                  },
+                ),
+                const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.backup),
-                  title: const Text('Respaldar datos'),
-                  subtitle: const Text('Exportar base de datos'),
+                  title: const Text('Respaldar Datos'),
+                  subtitle: const Text('Exportar base de datos actual'),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
-                    _showSnackBar('⚠️ Función en desarrollo', Colors.orange);
+                    _showSnackBar('⚠️ Funcionalidad en desarrollo');
                   },
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.restore),
-                  title: const Text('Restaurar datos'),
-                  subtitle: const Text('Importar base de datos'),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {
-                    _showSnackBar('⚠️ Función en desarrollo', Colors.orange);
-                  },
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          // Sección: Acerca de
-            ListTile(
-              leading: const Icon(Icons.feedback),
-              title: const Text('Enviar Feedback'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const FeedbackPage()),
-              ),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.help_outline),
-              title: const Text('Ayuda'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const HelpPage()),
-              ),
-            ),
-          _buildSectionTitle('Acerca de'),
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.code),
-                  title: const Text('Desarrollado por'),
-                  subtitle: const Text('Nova ADEN Team'),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.email),
-                  title: const Text('Contacto'),
-                  subtitle: const Text('soporte@nova-aden.com'),
                 ),
               ],
             ),
@@ -230,7 +250,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           Navigator.of(ctx).pop();
                           context.read<AuthBloc>().deactivateLicense();
                           Navigator.of(context).pop();
-                          _showSnackBar('👋 Sesión cerrada', Colors.blue);
+                          _showSnackBar('👋 Sesión cerrada');
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
@@ -269,14 +289,10 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _showSnackBar(String message, Color color) {
+  void _showSnackBar(String message, [Color color = Colors.blue]) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: color,
-          behavior: SnackBarBehavior.floating,
-        ),
+        SnackBar(content: Text(message), backgroundColor: color),
       );
     }
   }

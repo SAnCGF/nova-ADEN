@@ -169,4 +169,36 @@ class ProductRepository {
   }
 
 
+
+  // RF 36: Cambiar precios masivamente
+  Future<List<int>> cambiarPreciosMasivamente(List<int> productIds, double newPrice) async {
+    final db = await database;
+    final updatedIds = <int>[];
+    
+    for (var productId in productIds) {
+      final result = await db.update('productos', {'precioVenta': newPrice}, where: 'id = ?', whereArgs: [productId]);
+      if (result > 0) updatedIds.add(productId);
+    }
+    
+    return updatedIds;
+  }
+
+  // Helper: Actualizar precio por porcentaje
+  Future<List<int>> actualizarPrecioPorcentaje(List<int> productIds, double percentageChange) async {
+    final db = await database;
+    final updatedIds = <int>[];
+    
+    for (var productId in productIds) {
+      final maps = await db.query('productos', where: 'id = ?', whereArgs: [productId]);
+      if (maps.isNotEmpty) {
+        final currentPrice = (maps.first['precioVenta'] as num?)?.toDouble() ?? 0.0;
+        final newPrice = currentPrice * (1 + (percentageChange / 100));
+        final result = await db.update('productos', {'precioVenta': newPrice}, where: 'id = ?', whereArgs: [productId]);
+        if (result > 0) updatedIds.add(productId);
+      }
+    }
+    
+    return updatedIds;
+  }
+
 }

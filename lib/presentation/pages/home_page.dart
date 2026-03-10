@@ -69,7 +69,6 @@ class _HomePageState extends State<HomePage> {
                     color: const Color(0xFF1E3A5F),
                   ),
                 ),
-                const SizedBox(width: 12),
                 Expanded(
                   child: DashboardCard(
                     title: 'Ventas Hoy',
@@ -80,7 +79,6 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
@@ -91,7 +89,6 @@ class _HomePageState extends State<HomePage> {
                     color: const Color(0xFFF59E0B),
                   ),
                 ),
-                const SizedBox(width: 12),
                 Expanded(
                   child: DashboardCard(
                     title: 'Ingresos',
@@ -102,14 +99,12 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
             
             // Módulo de botones - ✅ SIN botón de configuración aquí
             const Text(
               'Módulos',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
