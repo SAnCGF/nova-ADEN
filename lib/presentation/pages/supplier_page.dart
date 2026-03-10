@@ -88,9 +88,9 @@ class _SupplierPageState extends State<SupplierPage> {
       _isEditing = true;
       _editingId = supplier.id;
       _nameController.text = supplier.name;
-      _phoneController.text = supplier.phone;
-      _emailController.text = supplier.email;
-      _addressController.text = supplier.address;
+      _phoneController.text = supplier.phone ?? "";
+      _emailController.text = supplier.email ?? "";
+      _addressController.text = supplier.address ?? "";
     });
   }
 
@@ -169,9 +169,9 @@ class _SupplierPageState extends State<SupplierPage> {
                               leading: const CircleAvatar(child: Icon(Icons.business)),
                               title: Text(supplier.name),
                               subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                if (supplier.phone.isNotEmpty) Text('📞 ${supplier.phone}'),
-                                if (supplier.email.isNotEmpty) Text('✉️ ${supplier.email}'),
-                                if (supplier.address.isNotEmpty) Text('📍 ${supplier.address}'),
+                                if ((supplier.phone ?? "").isNotEmpty) Text('📞 ${supplier.phone}'),
+                                if ((supplier.email ?? "").isNotEmpty) Text('✉️ ${supplier.email}'),
+                                if ((supplier.address ?? "").isNotEmpty) Text('📍 ${supplier.address}'),
                               ]),
                               trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                                 IconButton(icon: const Icon(Icons.edit, color: Colors.blue), onPressed: () => _editSupplier(supplier)),
