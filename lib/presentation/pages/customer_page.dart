@@ -33,25 +33,13 @@ class _CustomerPageState extends State<CustomerPage> {
   Future<void> _saveCustomer() async {
     if (_formKey.currentState!.validate()) {
       try {
-        final customer = Customer(
-          nombre: _nombreController.text.trim(),
-          carnetIdentidad: _ciController.text.trim(),
-          telefono: _telefonoController.text.trim(),
-        );
+        final customer = Customer(nombre: _nombreController.text.trim(), carnetIdentidad: _ciController.text.trim(), telefono: _telefonoController.text.trim());
         await _repository.createCustomer(customer);
         _formKey.currentState!.reset();
         await _loadCustomers();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Cliente registrado'), backgroundColor: Colors.green),
-          );
-        }
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Cliente registrado'), backgroundColor: Colors.green));
       } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
-          );
-        }
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red));
       }
     }
   }
@@ -60,109 +48,36 @@ class _CustomerPageState extends State<CustomerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Clientes'), centerTitle: true),
-      body: Column(
-        children: [
-          // Formulario
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _nombreController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nombre *',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (v) => v!.isEmpty ? 'Requerido' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _ciController,
-                    decoration: const InputDecoration(
-                      labelText: 'Carnet de Identidad *',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (v) => v!.isEmpty ? 'Requerido' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _telefonoController,
-                    decoration: const InputDecoration(
-                      labelText: 'Teléfono *',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (v) => v!.isEmpty ? 'Requerido' : null,
-                    keyboardType: TextInputType.phone,
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: _saveCustomer,
-                          icon: const Icon(Icons.add),
-                          label: const Text('AÑADIR'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          _formKey.currentState!.reset();
-                        },
-                        icon: const Icon(Icons.clear),
-                        label: const Text('Limpiar'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[300],
-                          foregroundColor: Colors.black87,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const Divider(),
-          // Lista de clientes
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _customers.isEmpty
-                    ? const Center(child: Text('No hay clientes registrados'))
-                    : ListView.builder(
-                        itemCount: _customers.length,
-                        itemBuilder: (ctx, i) {
-                          final c = _customers[i];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: Colors.blue,
-                                child: Icon(Icons.person, color: Colors.white),
-                              ),
-                              title: Text(c.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('CI: ${c.carnetIdentidad}'),
-                                  Text('📞 ${c.telefono}'),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-          ),
-        ],
-      ),
+      body: Column(children: [
+        Padding(padding: const EdgeInsets.all(16), child: Form(
+          key: _formKey,
+          child: Column(children: [
+            TextFormField(controller: _nombreController, decoration: const InputDecoration(labelText: 'Nombre *', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Requerido' : null),
+            const SizedBox(height: 12),
+            TextFormField(controller: _ciController, decoration: const InputDecoration(labelText: 'Carnet de Identidad *', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Requerido' : null),
+            const SizedBox(height: 12),
+            TextFormField(controller: _telefonoController, decoration: const InputDecoration(labelText: 'Teléfono *', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Requerido' : null, keyboardType: TextInputType.phone),
+            const SizedBox(height: 16),
+            Row(children: [
+              Expanded(child: ElevatedButton.icon(onPressed: _saveCustomer, icon: const Icon(Icons.add), label: const Text('AÑADIR'), style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)))),
+              const SizedBox(width: 12),
+              Expanded(child: ElevatedButton.icon(onPressed: () => _formKey.currentState!.reset(), icon: const Icon(Icons.clear), label: const Text('LIMPIAR'), style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[400], foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)))),
+            ]),
+          ]),
+        )),
+        const Divider(),
+        Expanded(child: _isLoading ? const Center(child: CircularProgressIndicator()) : _customers.isEmpty ? const Center(child: Text('No hay clientes registrados')) : ListView.builder(
+          itemCount: _customers.length,
+          itemBuilder: (ctx, i) {
+            final c = _customers[i];
+            return Card(margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), child: ListTile(
+              leading: CircleAvatar(backgroundColor: Colors.blue, child: Icon(Icons.person, color: Colors.white)),
+              title: Text(c.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('CI: ${c.carnetIdentidad}'), Text('📞 ${c.telefono}')]),
+            ));
+          },
+        )),
+      ]),
     );
   }
 

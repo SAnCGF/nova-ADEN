@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'presentation/pages/home_page.dart';
+import 'core/constants/app_constants.dart';
+import 'presentation/pages/welcome_page.dart';
 
 void main() {
   runApp(const NovaAdenApp());
@@ -11,9 +12,10 @@ class NovaAdenApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Nova ADEN',
-      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue), useMaterial3: true),
-      home: const HomePage(),
+      title: AppConstants.appName,
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
+      home: const WelcomePage(),
     );
   }
 }
