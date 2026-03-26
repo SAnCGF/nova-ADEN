@@ -8,41 +8,46 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Java 17
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
-      
-      - name: Setup Flutter 3.19.0
+
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.0'
           channel: 'stable'
-          cache: true
-      
+
       - name: Install dependencies
         run: flutter pub get
-      
+
       - name: Build APK
+        run: flutter build apk --release --split-per-abi --no-tree-shake-icons
+
+      - name: Verify APK exists
         run: |
-          flutter build apk --release --split-per-abi \
-            --no-tree-shake-icons \
-            --dart-define=DART_OBFUSCATION=false
-      
-      - name: List APK files
-        run: |
-          echo "=== APKs generados ==="
-          ls -lh build/app/outputs/flutter-apk/app-*.apk 2>/dev/null || echo "⚠️ No APKs found"
-      
-      - name: Upload APK (v4 - actualizado)
+          echo "=== Checking for APK ==="
+          if [ -f "build/app/outputs/flutter-apk/app-arm64-v8a-release.apk" ]; then
+            echo "✅ APK found!"
+            ls -lh build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          else
+            echo "❌ APK not found - listing build directory:"
+            find build -name "*.apk" 2>/dev/null || echo "No APKs anywhere"
+            exit 1
+          fi
+
+      - name: Upload ONLY the APK
         uses: actions/upload-artifact@v4
         with:
           name: nova-aden-apk
           path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-          retention-days: 7
-          if-no-files-found: warn
+          compression-level: 0
+          overwrite: true
