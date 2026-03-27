@@ -17,29 +17,27 @@ class Product {
     required this.stockMinimo,
   });
 
-  // toMap: usa nombres de COLUMNAS de la base de datos
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'nombre': nombre,
       'codigo': codigo,
       'costo': costo,
-      'precio_venta': precioVenta,      // ← Columna en BD
-      'stock_actual': stockActual,       // ← Columna en BD
-      'stock_minimo': stockMinimo,       // ← Columna en BD
+      'precio_venta': precioVenta,
+      'stock_actual': stockActual,
+      'stock_minimo': stockMinimo,
     };
   }
 
-  // fromMap: lee de COLUMNAS de la base de datos
   factory Product.fromMap(Map<String, dynamic> map) {
     return Product(
       id: map['id'] as int?,
       nombre: map['nombre'] as String,
       codigo: map['codigo'] as String,
       costo: (map['costo'] as num?)?.toDouble(),
-      precioVenta: (map['precio_venta'] as num).toDouble(),  // ← Lee de columna BD
-      stockActual: map['stock_actual'] as int,                // ← Lee de columna BD
-      stockMinimo: map['stock_minimo'] as int,                // ← Lee de columna BD
+      precioVenta: (map['precio_venta'] as num).toDouble(),
+      stockActual: map['stock_actual'] as int,
+      stockMinimo: map['stock_minimo'] as int,
     );
   }
 }

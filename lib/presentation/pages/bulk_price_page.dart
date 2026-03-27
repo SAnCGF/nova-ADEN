@@ -17,7 +17,10 @@ class _BulkPricePageState extends State<BulkPricePage> {
   final List<int> _selectedIds = [];
 
   @override
-  void initState() { super.initState(); _loadProducts(); }
+  void initState() { 
+    super.initState(); 
+    _loadProducts(); 
+  }
 
   Future<void> _loadProducts() async {
     setState(() => _loading = true);
@@ -27,26 +30,35 @@ class _BulkPricePageState extends State<BulkPricePage> {
 
   void _toggleSelect(int id) {
     setState(() {
-      if (_selectedIds.contains(id)) { _selectedIds.remove(id); } else { _selectedIds.add(id); }
+      if (_selectedIds.contains(id)) { 
+        _selectedIds.remove(id); 
+      } else { 
+        _selectedIds.add(id); 
+      }
     });
   }
 
   void _selectAll() {
     setState(() {
-      if (_selectedIds.length == _products.length) { _selectedIds.clear(); } else { _selectedIds.addAll(_products.map((p) => p.id!)); }
+      if (_selectedIds.length == _products.length) { 
+        _selectedIds.clear(); 
+      } else { 
+        _selectedIds.addAll(_products.map((p) => p.id!)); 
+      }
     });
   }
 
   Future<void> _applyChanges() async {
     if (_selectedIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Seleccione productos'), backgroundColor: Colors.orange));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('⚠️ Seleccione productos'), backgroundColor: Colors.orange),
+      );
       return;
     }
     setState(() => _loading = true);
     try {
       for (final id in _selectedIds) {
         final product = _products.firstWhere((p) => p.id == id);
-        // CORRECCIÓN: usar precioVenta y stockActual (nombres reales del modelo)
         final newPrice = _increase 
             ? product.precioVenta * (1 + _percentageChange / 100) 
             : product.precioVenta * (1 - _percentageChange / 100);
@@ -55,20 +67,27 @@ class _BulkPricePageState extends State<BulkPricePage> {
           nombre: product.nombre, 
           codigo: product.codigo, 
           costo: product.costo,
-          precioVenta: newPrice,  // ← CORREGIDO: precioVenta, no precio
-          stockActual: product.stockActual,  // ← CORREGIDO: stockActual, no stock
+          precioVenta: newPrice,
+          stockActual: product.stockActual,
           stockMinimo: product.stockMinimo,
         ));
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('✅ Precios actualizados en ${_selectedIds.length} productos'), backgroundColor: Colors.green),
+          SnackBar(
+            content: Text('✅ Precios actualizados en ${_selectedIds.length} productos'), 
+            backgroundColor: Colors.green,
+          ),
         );
         _selectedIds.clear(); 
         await _loadProducts();
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red),
+        );
+      }
     }
     setState(() => _loading = false);
   }
@@ -76,22 +95,142 @@ class _BulkPricePageState extends State<BulkPricePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Cambiar Precios Masivo'), centerTitle: true),
-      body: _loading ? const Center(child: CircularProgressIndicator()) : Column(children: [
-        Padding(padding: const EdgeInsets.all(16), child: Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('🏷️ Configurar Cambio', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), const SizedBox(height: 12),
-          Row(children: [
-            Expanded(child: DropdownButtonFormField<bool>(decoration: const InputDecoration(labelText: 'Tipo de cambio', border: OutlineInputBorder()), value: _increase, items: const [DropdownMenuItem(value: true, child: Text('➕ Aumentar')), DropdownMenuItem(value: false, child: Text('➖ Disminuir'))], onChanged: (v) => setState(() => _increase = v!))),
-            const SizedBox(width: 12),
-            Expanded(child: TextField(keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Porcentaje (%)', border: OutlineInputBorder()), onChanged: (v) => _percentageChange = double.tryParse(v) ?? 0)),
-          ]),
-          const SizedBox(height: 12),
-          Text('Vista previa: \$100 → \$${(100 * (_increase ? 1 + _percentageChange/100 : 1 - _percentageChange/100)).toStringAsFixed(2)}', style: TextStyle(color: _increase ? Colors.green : Colors.red, fontWeight: FontWeight.bold)),
-        ]))),
-        Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('📦 Productos (${_selectedIds.length}/${_products.length})', style: const TextStyle(fontWeight: FontWeight.bold)), TextButton(onPressed: _selectAll, child: const Text('Seleccionar todos'))])),
-        Expanded(child: ListView.builder(padding: const EdgeInsets.symmetric(horizontal: 16), itemCount: _products.length, itemBuilder: (ctx, i) { final p = _products[i]; final selected = _selectedIds.contains(p.id); return Card(color: selected ? Colors.blue[50] : null, child: ListTile(leading: Checkbox(value: selected, onChanged: (_) => _toggleSelect(p.id!)), title: Text(p.nombre, style: const TextStyle(fontWeight: FontWeight.bold)), subtitle: Text('Precio: \$${p.precioVenta.toStringAsFixed(2)}'), trailing: Text('\$${(p.precioVenta * (_increase ? 1 + _percentageChange/100 : 1 - _percentageChange/100)).toStringAsFixed(2)}', style: TextStyle(color: _increase ? Colors.green : Colors.red, fontWeight: FontWeight.bold)))); })),
-        if (_selectedIds.isNotEmpty) Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.grey[200], boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4, offset: const Offset(0, -2))]), child: SizedBox(width: double.infinity, height: 50, child: ElevatedButton.icon(onPressed: _applyChanges, icon: const Icon(Icons.check_circle), label: Text('APLICAR A ${_selectedIds.length} PRODUCTOS', style: const TextStyle(fontWeight: FontWeight.bold)), style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white)))),
-      ]),
+      appBar: AppBar(
+        title: const Text('Cambiar Precios Masivo'), 
+        centerTitle: true,
+      ),
+      body: _loading 
+          ? const Center(child: CircularProgressIndicator()) 
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16), 
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16), 
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start, 
+                        children: [
+                          const Text('🏷️ Configurar Cambio', 
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), 
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: DropdownButtonFormField<bool>(
+                                  decoration: const InputDecoration(
+                                    labelText: 'Tipo de cambio', 
+                                    border: OutlineInputBorder(),
+                                  ), 
+                                  value: _increase, 
+                                  items: const [
+                                    DropdownMenuItem(value: true, child: Text('➕ Aumentar')), 
+                                    DropdownMenuItem(value: false, child: Text('➖ Disminuir')),
+                                  ], 
+                                  onChanged: (v) => setState(() => _increase = v!),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: TextField(
+                                  keyboardType: TextInputType.number, 
+                                  decoration: const InputDecoration(
+                                    labelText: 'Porcentaje (%)', 
+                                    border: OutlineInputBorder(),
+                                  ), 
+                                  onChanged: (v) => _percentageChange = double.tryParse(v) ?? 0,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Vista previa: \$100 → \$${(100 * (_increase ? 1 + _percentageChange/100 : 1 - _percentageChange/100)).toStringAsFixed(2)}', 
+                            style: TextStyle(
+                              color: _increase ? Colors.green : Colors.red, 
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16), 
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+                    children: [
+                      Text('📦 Productos (${_selectedIds.length}/${_products.length})', 
+                          style: const TextStyle(fontWeight: FontWeight.bold)), 
+                      TextButton(
+                        onPressed: _selectAll, 
+                        child: const Text('Seleccionar todos'),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16), 
+                    itemCount: _products.length, 
+                    itemBuilder: (ctx, i) { 
+                      final p = _products[i]; 
+                      final selected = _selectedIds.contains(p.id); 
+                      return Card(
+                        color: selected ? Colors.blue[50] : null, 
+                        child: ListTile(
+                          leading: Checkbox(
+                            value: selected, 
+                            onChanged: (_) => _toggleSelect(p.id!),
+                          ), 
+                          title: Text(p.nombre, 
+                              style: const TextStyle(fontWeight: FontWeight.bold)), 
+                          subtitle: Text('Precio: \$${p.precioVenta.toStringAsFixed(2)}'), 
+                          trailing: Text(
+                            '\$${(p.precioVenta * (_increase ? 1 + _percentageChange/100 : 1 - _percentageChange/100)).toStringAsFixed(2)}', 
+                            style: TextStyle(
+                              color: _increase ? Colors.green : Colors.red, 
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ); 
+                    },
+                  ),
+                ),
+                if (_selectedIds.isNotEmpty) 
+                  Container(
+                    padding: const EdgeInsets.all(16), 
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200], 
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26, 
+                          blurRadius: 4, 
+                          offset: const Offset(0, -2),
+                        ),
+                      ],
+                    ), 
+                    child: SizedBox(
+                      width: double.infinity, 
+                      height: 50, 
+                      child: ElevatedButton.icon(
+                        onPressed: _applyChanges, 
+                        icon: const Icon(Icons.check_circle), 
+                        label: Text(
+                          'APLICAR A ${_selectedIds.length} PRODUCTOS', 
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ), 
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green, 
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
     );
   }
 }
