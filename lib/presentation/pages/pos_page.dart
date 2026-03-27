@@ -67,7 +67,7 @@ class _PosPageState extends State<PosPage> {
         _cart.add(CartItem(
           productoId: product.id!,
           nombre: product.nombre,
-          precio: product.precioVenta,
+          precioVenta: product.precioVenta,
           cantidad: 1,
           stockDisponible: product.stockActual,
         ));
