@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/utils/responsive_layout.dart';
 import './product_list_page.dart';
 import './pos_page.dart';
 import './purchase_page.dart';
@@ -13,7 +14,7 @@ import '../../core/repositories/product_repository.dart';
 import '../../core/repositories/sale_repository.dart';
 
 class HomePage extends StatefulWidget {
-  final Function()? onToggleTheme;
+  final VoidCallback? onToggleTheme;
   const HomePage({super.key, this.onToggleTheme});
 
   @override
@@ -47,6 +48,49 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    return ResponsiveLayout(
+      mobile: _HomeContent(
+        onToggleTheme: widget.onToggleTheme,
+        loading: _loading,
+        loadStats: _loadStats,
+        totalProducts: _totalProducts,
+        ventasHoy: _ventasHoy,
+        alertasStock: _alertasStock,
+        ingresos: _ingresos,
+      ),
+      desktop: _HomeDesktop(
+        onToggleTheme: widget.onToggleTheme,
+        loading: _loading,
+        loadStats: _loadStats,
+        totalProducts: _totalProducts,
+        ventasHoy: _ventasHoy,
+        alertasStock: _alertasStock,
+        ingresos: _ingresos,
+      ),
+    );
+  }
+}
+
+// Vista Mobile (original)
+class _HomeContent extends StatelessWidget {
+  final VoidCallback? onToggleTheme;
+  final bool loading;
+  final RefreshCallback loadStats;  // ✅ CORREGIDO: RefreshCallback para RefreshIndicator
+  final int totalProducts, ventasHoy, alertasStock;
+  final double ingresos;
+
+  const _HomeContent({
+    this.onToggleTheme,
+    required this.loading,
+    required this.loadStats,
+    required this.totalProducts,
+    required this.ventasHoy,
+    required this.alertasStock,
+    required this.ingresos,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
@@ -54,35 +98,26 @@ class _HomePageState extends State<HomePage> {
         title: const Text(AppConstants.appName),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadStats),
-          IconButton(
-            icon: const Icon(Icons.settings), 
-            onPressed: () => Navigator.push(
-              context, 
-              MaterialPageRoute(
-                builder: (_) => SettingsPage(
-                  onToggleTheme: widget.onToggleTheme,
-                  isDark: isDark,
-                ),
-              ),
-            ),
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: loadStats),
+          IconButton(icon: const Icon(Icons.settings), 
+            onPressed: () => Navigator.push(context, MaterialPageRoute(
+              builder: (_) => SettingsPage(onToggleTheme: onToggleTheme, isDark: isDark)))),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _loadStats,
+        onRefresh: loadStats,  // ✅ Ahora coincide con RefreshCallback
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _loading ? const Center(child: CircularProgressIndicator()) : GridView.count(
+            loading ? const Center(child: CircularProgressIndicator()) : GridView.count(
               shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
               crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 1.3,
               children: [
-                _statCard('Productos', '$_totalProducts', Icons.inventory_2, Colors.blue),
-                _statCard('Ventas Hoy', '$_ventasHoy', Icons.shopping_cart, Colors.green),
-                _statCard('Alertas Stock', '$_alertasStock', Icons.warning_amber, Colors.orange),
-                _statCard('Ingresos', '\$${_ingresos.toStringAsFixed(2)}', Icons.attach_money, Colors.purple),
+                _statCard('Productos', '$totalProducts', Icons.inventory_2, Colors.blue),
+                _statCard('Ventas Hoy', '$ventasHoy', Icons.shopping_cart, Colors.green),
+                _statCard('Alertas Stock', '$alertasStock', Icons.warning_amber, Colors.orange),
+                _statCard('Ingresos', '\$${ingresos.toStringAsFixed(2)}', Icons.attach_money, Colors.purple),
               ],
             ),
             const SizedBox(height: 24),
@@ -126,6 +161,142 @@ class _HomePageState extends State<HomePage> {
       child: Card(elevation: 4, child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         Icon(icon, size: 48, color: color), const SizedBox(height: 8),
         Text(title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
+      ])),
+    );
+  }
+}
+
+// Vista Desktop (pantallas grandes)
+class _HomeDesktop extends StatelessWidget {
+  final VoidCallback? onToggleTheme;
+  final bool loading;
+  final RefreshCallback loadStats;  // ✅ CORREGIDO: RefreshCallback para RefreshIndicator
+  final int totalProducts, ventasHoy, alertasStock;
+  final double ingresos;
+
+  const _HomeDesktop({
+    this.onToggleTheme,
+    required this.loading,
+    required this.loadStats,
+    required this.totalProducts,
+    required this.ventasHoy,
+    required this.alertasStock,
+    required this.ingresos,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          const Icon(Icons.shopping_bag, size: 32),
+          const SizedBox(width: 12),
+          Text(AppConstants.appName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        ]),
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: loadStats),
+          IconButton(icon: const Icon(Icons.settings), 
+            onPressed: () => Navigator.push(context, MaterialPageRoute(
+              builder: (_) => SettingsPage(onToggleTheme: onToggleTheme, isDark: isDark)))),
+          const SizedBox(width: 16),
+        ],
+      ),
+      body: Row(
+        children: [
+          // Sidebar de navegación
+          NavigationRail(
+            extended: true,
+            leading: FloatingActionButton(
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProductListPage())),
+              child: const Icon(Icons.add),
+            ),
+            destinations: const [
+              NavigationRailDestination(icon: Icon(Icons.inventory_2), label: Text('Inventario')),
+              NavigationRailDestination(icon: Icon(Icons.point_of_sale), label: Text('Punto de Venta')),
+              NavigationRailDestination(icon: Icon(Icons.shopping_bag), label: Text('Compras')),
+              NavigationRailDestination(icon: Icon(Icons.receipt_long), label: Text('Ventas')),
+              NavigationRailDestination(icon: Icon(Icons.business), label: Text('Proveedores')),
+              NavigationRailDestination(icon: Icon(Icons.people), label: Text('Clientes')),
+              NavigationRailDestination(icon: Icon(Icons.warning_amber), label: Text('Mermas')),
+              NavigationRailDestination(icon: Icon(Icons.bar_chart), label: Text('Reportes')),
+            ],
+            selectedIndex: -1,
+            onDestinationSelected: (index) {
+              final pages = [
+                const ProductListPage(), const PosPage(), const PurchasePage(), const SalesListPage(),
+                const SupplierPage(), const CustomerPage(), const WastePage(), const ReportsPage(),
+              ];
+              Navigator.push(context, MaterialPageRoute(builder: (_) => pages[index]));
+            },
+          ),
+          const VerticalDivider(thickness: 1, width: 1),
+          // Contenido principal
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: loadStats,  // ✅ Ahora coincide con RefreshCallback
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(24),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  // Dashboard en fila para desktop
+                  loading ? const Center(child: CircularProgressIndicator()) : Row(
+                    children: [
+                      Expanded(child: _statCardDesktop('Productos', '$totalProducts', Icons.inventory_2, Colors.blue)),
+                      const SizedBox(width: 16),
+                      Expanded(child: _statCardDesktop('Ventas Hoy', '$ventasHoy', Icons.shopping_cart, Colors.green)),
+                      const SizedBox(width: 16),
+                      Expanded(child: _statCardDesktop('Alertas Stock', '$alertasStock', Icons.warning_amber, Colors.orange)),
+                      const SizedBox(width: 16),
+                      Expanded(child: _statCardDesktop('Ingresos', '\$${ingresos.toStringAsFixed(2)}', Icons.attach_money, Colors.purple)),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  const Text('Accesos Rápidos', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  // Módulos en grid más grande para desktop
+                  GridView.count(
+                    shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 4, mainAxisSpacing: 20, crossAxisSpacing: 20, childAspectRatio: 1.2,
+                    children: [
+                      _moduleCardDesktop(context, 'Inventario', Icons.inventory_2, Colors.blue, const ProductListPage()),
+                      _moduleCardDesktop(context, 'Punto de Venta', Icons.point_of_sale, Colors.green, const PosPage()),
+                      _moduleCardDesktop(context, 'Compras', Icons.shopping_bag, Colors.orange, const PurchasePage()),
+                      _moduleCardDesktop(context, 'Ventas', Icons.receipt_long, Colors.teal, const SalesListPage()),
+                      _moduleCardDesktop(context, 'Proveedores', Icons.business, Colors.brown, const SupplierPage()),
+                      _moduleCardDesktop(context, 'Clientes', Icons.people, Colors.pink, const CustomerPage()),
+                      _moduleCardDesktop(context, 'Mermas', Icons.warning_amber, Colors.red, const WastePage()),
+                      _moduleCardDesktop(context, 'Reportes', Icons.bar_chart, Colors.purple, const ReportsPage()),
+                    ],
+                  ),
+                ]),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _statCardDesktop(String title, String value, IconData icon, Color color) {
+    return Card(elevation: 4, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(padding: const EdgeInsets.all(20),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(icon, size: 40, color: color), const SizedBox(height: 12),
+          Text(value, style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: color)),
+          const SizedBox(height: 6), Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 14)),
+        ]),
+      ),
+    );
+  }
+
+  Widget _moduleCardDesktop(BuildContext ctx, String title, IconData icon, Color color, Widget page) {
+    return InkWell(onTap: () => Navigator.push(ctx, MaterialPageRoute(builder: (_) => page)),
+      borderRadius: BorderRadius.circular(16),
+      child: Card(elevation: 4, child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(icon, size: 56, color: color), const SizedBox(height: 12),
+        Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
       ])),
     );
   }

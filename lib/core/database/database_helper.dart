@@ -1,5 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'dart:io';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -14,6 +16,12 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
+    // Inicializar FFI para Windows/Linux
+    if (Platform.isWindows || Platform.isLinux) {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+    }
+
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'nova_aden.db');
 
@@ -82,7 +90,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // RF 55: Ventas con moneda
     await db.execute('''
       CREATE TABLE ventas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -109,7 +116,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // RF 54: Ventas pausadas
     await db.execute('''
       CREATE TABLE ventas_pausadas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -135,7 +141,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // RF 60: Mermas con motivo de vencimiento
     await db.execute('''
       CREATE TABLE mermas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

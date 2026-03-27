@@ -1,5 +1,5 @@
 name: nova_aden
-description: Sistema de Gestión Comercial Nova ADEN
+description: Sistema de Gestión Comercial Nova ADEN - Multiplataforma
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -9,12 +9,22 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  
+  # Base de datos (compatible con todas las plataformas)
   sqflite: ^2.3.0
+  sqflite_common_ffi: ^2.3.0  # Para Windows/Linux
   path: ^1.8.3
+  
+  # UI y utilidades
   intl: ^0.18.1
+  provider: ^6.1.1
+  
+  # Archivos y preferencias (multiplataforma)
   shared_preferences: ^2.2.2
-  csv: ^5.1.1
   path_provider: ^2.1.1
+  
+  # CSV para exportar/importar
+  csv: ^5.1.1
 
 dev_dependencies:
   flutter_test:
