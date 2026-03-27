@@ -167,7 +167,7 @@ class _PosPageState extends State<PosPage> {
     }
   }
 
-  // RF 52: Teclado numérico OPTIMIZADO CON NÚMEROS VISIBLES
+  // RF 52: Teclado numérico con NÚMEROS VISIBLES
   void _showNumericKeypad() {
     double tempAmount = _amountPaid;
     
