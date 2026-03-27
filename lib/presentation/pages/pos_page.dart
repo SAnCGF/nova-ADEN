@@ -41,7 +41,6 @@ class _PosPageState extends State<PosPage> {
   double _discountPercent = 0.0;
   
   final _pauseNameController = TextEditingController();
-  final _amountPaidController = TextEditingController();
 
   @override
   void initState() { 
@@ -107,7 +106,8 @@ class _PosPageState extends State<PosPage> {
   double get _subtotal => _cart.fold(0.0, (sum, c) => sum + c.subtotal);
   double get _discountAmount => _applyDiscount ? _subtotal * (_discountPercent / 100) : 0.0;
   double get _total => _subtotal - _discountAmount;
-  double get _change => _isCredit ? 0.0 : _amountPaid - _total;
+  double get _change => _isCredit ? 0.0 : (_amountPaid >= _total ? _amountPaid - _total : 0.0);
+  double get _pending => _isCredit ? _total - _amountPaid : 0.0;
 
   Future<void> _pauseSale() async {
     if (_cart.isEmpty) {
@@ -167,7 +167,7 @@ class _PosPageState extends State<PosPage> {
     }
   }
 
-  // RF 52: Teclado numérico OPTIMIZADO
+  // RF 52: Teclado numérico OPTIMIZADO CON NÚMEROS VISIBLES
   void _showNumericKeypad() {
     double tempAmount = _amountPaid;
     
@@ -234,7 +234,7 @@ class _PosPageState extends State<PosPage> {
                       }
                     },
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.orange[100], padding: const EdgeInsets.all(20)),
-                    child: const Text('⌫', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                    child: const Icon(Icons.backspace, size: 28),
                   ),
                 ],
               ),
@@ -244,8 +244,9 @@ class _PosPageState extends State<PosPage> {
                 height: 55,
                 child: ElevatedButton(
                   onPressed: () {
-                    setState(() => _amountPaid = tempAmount);
-                    _amountPaidController.text = _amountPaid.toStringAsFixed(2);
+                    setState(() {
+                      _amountPaid = tempAmount;
+                    });
                     Navigator.pop(ctx);
                   },
                   style: ElevatedButton.styleFrom(
@@ -303,7 +304,6 @@ class _PosPageState extends State<PosPage> {
       
       _clearCart();
       _amountPaid = 0.0;
-      _amountPaidController.clear();
       _isCredit = false;
       _creditNotes = '';
       _applyDiscount = false;
@@ -511,8 +511,8 @@ class _PosPageState extends State<PosPage> {
                                           border: const OutlineInputBorder(),
                                           hintText: _amountPaid > 0 ? '\$${_amountPaid.toStringAsFixed(2)}' : 'Monto pagado',
                                           filled: _amountPaid > 0,
+                                          fillColor: _amountPaid > 0 ? Colors.green[50] : null,
                                         ),
-                                        controller: TextEditingController(text: _amountPaid > 0 ? '\$${_amountPaid.toStringAsFixed(2)}' : ''),
                                       ),
                                     ),
                                     const SizedBox(width: 12),
@@ -601,14 +601,23 @@ class _PosPageState extends State<PosPage> {
                               Text('\$${_amountPaid.toStringAsFixed(2)}', style: TextStyle(fontSize: 16, color: Colors.grey[700])),
                             ]),
                             const SizedBox(height: 8),
-                            if (!_isCredit && _amountPaid > 0) Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                              const Text('🔄 CAMBIO:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
-                              Text('\$${_change.toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _change >= 0 ? Colors.blue : Colors.red)),
-                            ]),
-                            if (_isCredit) Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                              const Text('⚠️ Pendiente:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
-                              Text('\$${(_total - _amountPaid).toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
-                            ]),
+                            if (!_isCredit) ...[
+                              if (_amountPaid < _total)
+                                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                  const Text('⚠️ Faltante:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
+                                  Text('\$${(_total - _amountPaid).toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
+                                ])
+                              else if (_amountPaid >= _total)
+                                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                  const Text('🔄 CAMBIO:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
+                                  Text('\$${_change.toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue)),
+                                ]),
+                            ],
+                            if (_isCredit && _amountPaid > 0)
+                              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                const Text('⚠️ Pendiente:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
+                                Text('\$${_pending.toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
+                              ]),
                             const SizedBox(height: 16),
                             // Botón confirmar
                             SizedBox(
@@ -783,7 +792,6 @@ class _PosPageState extends State<PosPage> {
   void dispose() {
     _searchController.dispose();
     _pauseNameController.dispose();
-    _amountPaidController.dispose();
     super.dispose();
   }
 }
