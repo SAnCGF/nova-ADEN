@@ -8,9 +8,7 @@ import './reports_page.dart';
 import './settings_page.dart';
 import './supplier_page.dart';
 import './customer_page.dart';
-import './inventory_adjustment_page.dart';
 import './waste_page.dart';
-import './bulk_price_page.dart';
 import '../../core/repositories/product_repository.dart';
 import '../../core/repositories/sale_repository.dart';
 
@@ -100,9 +98,7 @@ class _HomePageState extends State<HomePage> {
                 _moduleCard(context, 'Ventas', Icons.receipt_long, Colors.teal, const SalesListPage()),
                 _moduleCard(context, 'Proveedores', Icons.business, Colors.brown, const SupplierPage()),
                 _moduleCard(context, 'Clientes', Icons.people, Colors.pink, const CustomerPage()),
-                _moduleCard(context, 'Ajustes Inv.', Icons.edit, Colors.indigo, const InventoryAdjustmentPage()),
                 _moduleCard(context, 'Mermas', Icons.warning_amber, Colors.red, const WastePage()),
-                _moduleCard(context, 'Precios Masivo', Icons.percent, Colors.cyan, const BulkPricePage()),
                 _moduleCard(context, 'Reportes', Icons.bar_chart, Colors.purple, const ReportsPage()),
               ],
             ),

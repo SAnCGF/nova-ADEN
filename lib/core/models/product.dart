@@ -6,12 +6,11 @@ class Product {
   final double precioVenta;
   final int stockActual;
   final int stockMinimo;
-  // RF 42: Categoría
   final String? categoria;
-  // RF 44: Favorito
   final bool esFavorito;
-  // RF 41: Alerta crítica (stock mínimo personalizado)
   final int? stockCritico;
+  // RF 51: Margen de ganancia sugerido
+  final double? margenGanancia;
 
   Product({
     this.id,
@@ -24,6 +23,7 @@ class Product {
     this.categoria,
     this.esFavorito = false,
     this.stockCritico,
+    this.margenGanancia,
   });
 
   Map<String, dynamic> toMap() {
@@ -38,6 +38,7 @@ class Product {
       'categoria': categoria,
       'es_favorito': esFavorito ? 1 : 0,
       'stock_critico': stockCritico,
+      'margen_ganancia': margenGanancia,
     };
   }
 
@@ -53,9 +54,22 @@ class Product {
       categoria: map['categoria'] as String?,
       esFavorito: (map['es_favorito'] as int?) == 1,
       stockCritico: map['stock_critico'] as int?,
+      margenGanancia: (map['margen_ganancia'] as num?)?.toDouble(),
     );
   }
 
-  // RF 41: ¿Stock crítico?
+  // RF 51: Calcular precio sugerido por margen
+  double calcularPrecioSugerido(double margen) {
+    final costoReal = costo ?? 0.0;
+    return costoReal > 0 ? costoReal * (1 + margen / 100) : precioVenta;
+  }
+
+  // RF 51: Obtener margen actual
+  double get margenActual {
+    final costoReal = costo ?? 0.0;
+    if (costoReal <= 0) return 0.0;
+    return ((precioVenta - costoReal) / costoReal) * 100;
+  }
+
   bool get esStockCritico => stockCritico != null ? stockActual <= stockCritico! : stockActual <= stockMinimo;
 }

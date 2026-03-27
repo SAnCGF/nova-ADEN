@@ -19,14 +19,13 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2, // Incrementado para migración
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    // Tabla productos con TODOS los campos nuevos
     await db.execute('''
       CREATE TABLE productos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,11 +37,11 @@ class DatabaseHelper {
         stock_minimo INTEGER NOT NULL,
         categoria TEXT,
         es_favorito INTEGER DEFAULT 0,
-        stock_critico INTEGER
+        stock_critico INTEGER,
+        margen_ganancia REAL
       )
     ''');
 
-    // Tabla clientes
     await db.execute('''
       CREATE TABLE clientes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,7 +53,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla proveedores
     await db.execute('''
       CREATE TABLE proveedores (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -64,7 +62,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla compras
     await db.execute('''
       CREATE TABLE compras (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,7 +71,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla compra_detalles
     await db.execute('''
       CREATE TABLE compra_detalles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -86,7 +82,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla ventas
+    // RF 55: Ventas con moneda
     await db.execute('''
       CREATE TABLE ventas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -96,11 +92,12 @@ class DatabaseHelper {
         monto_pagado REAL DEFAULT 0,
         monto_pendiente REAL DEFAULT 0,
         notas_credito TEXT,
-        es_fiado INTEGER DEFAULT 0
+        es_fiado INTEGER DEFAULT 0,
+        moneda TEXT DEFAULT 'CUP',
+        tasa_cambio REAL DEFAULT 1.0
       )
     ''');
 
-    // Tabla venta_detalles
     await db.execute('''
       CREATE TABLE venta_detalles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -112,7 +109,18 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla ajustes_inventario
+    // RF 54: Ventas pausadas
+    await db.execute('''
+      CREATE TABLE ventas_pausadas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL,
+        fecha_creacion TEXT NOT NULL,
+        cliente_id INTEGER,
+        productos TEXT NOT NULL,
+        total REAL NOT NULL
+      )
+    ''');
+
     await db.execute('''
       CREATE TABLE ajustes_inventario (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -127,7 +135,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla mermas
+    // RF 60: Mermas con motivo de vencimiento
     await db.execute('''
       CREATE TABLE mermas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -142,27 +150,18 @@ class DatabaseHelper {
     ''');
   }
 
-  // Migración para bases de datos existentes
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      // Agregar columnas nuevas a productos (si no existen)
-      try {
-        await db.execute('ALTER TABLE productos ADD COLUMN categoria TEXT');
-      } catch (_) {}
-      try {
-        await db.execute('ALTER TABLE productos ADD COLUMN es_favorito INTEGER DEFAULT 0');
-      } catch (_) {}
-      try {
-        await db.execute('ALTER TABLE productos ADD COLUMN stock_critico INTEGER');
-      } catch (_) {}
-      
-      // Agregar columnas a clientes
-      try {
-        await db.execute('ALTER TABLE clientes ADD COLUMN es_habitual INTEGER DEFAULT 0');
-      } catch (_) {}
-      try {
-        await db.execute('ALTER TABLE clientes ADD COLUMN fecha_registro TEXT');
-      } catch (_) {}
+      try { await db.execute('ALTER TABLE productos ADD COLUMN categoria TEXT'); } catch (_) {}
+      try { await db.execute('ALTER TABLE productos ADD COLUMN es_favorito INTEGER DEFAULT 0'); } catch (_) {}
+      try { await db.execute('ALTER TABLE productos ADD COLUMN stock_critico INTEGER'); } catch (_) {}
+      try { await db.execute('ALTER TABLE clientes ADD COLUMN es_habitual INTEGER DEFAULT 0'); } catch (_) {}
+      try { await db.execute('ALTER TABLE clientes ADD COLUMN fecha_registro TEXT'); } catch (_) {}
+    }
+    if (oldVersion < 3) {
+      try { await db.execute('ALTER TABLE productos ADD COLUMN margen_ganancia REAL'); } catch (_) {}
+      try { await db.execute('ALTER TABLE ventas ADD COLUMN moneda TEXT DEFAULT \'CUP\''); } catch (_) {}
+      try { await db.execute('ALTER TABLE ventas ADD COLUMN tasa_cambio REAL DEFAULT 1.0'); } catch (_) {}
     }
   }
 }
