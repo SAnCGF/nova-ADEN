@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/models/product.dart';
 import '../../core/repositories/product_repository.dart';
-import '../../core/utils/csv_exporter.dart';
+import '../../core/utils/pdf_generator.dart';
 import 'inventory_adjustments_page.dart';
 import 'bulk_price_page.dart';
 
@@ -31,39 +31,61 @@ class _ProductListPageState extends State<ProductListPage> {
     setState(() => _loading = false);
   }
 
-  Future<void> _exportCsv() async {
+  Future<void> _exportPdf() async {
+    if (_products.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('⚠️ No hay productos para exportar')),
+      );
+      return;
+    }
     try {
-      final products = await _repo.getAllProducts();
-      final path = await CsvExporter.exportProducts(products.map((p) => p.toMap()).toList());
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('✅ Exportado: ${path.split('/').last}'), backgroundColor: Colors.green, duration: const Duration(seconds: 5)),
-        );
-      }
+      await PdfGenerator.generateProductCatalog(_products);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('❌ Error al generar PDF: $e'), backgroundColor: Colors.red),
         );
       }
     }
   }
 
+  // Validación de Código Único
+  Future<bool> _isCodeUnique(String code, {int? excludeId}) async {
+    final all = await _repo.getAllProducts();
+    final exists = all.any((p) => p.codigo == code && p.id != excludeId);
+    return !exists;
+  }
+
   Future<void> _deleteProduct(int id) async {
-    try {
-      await _repo.deleteProduct(id);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Producto eliminado'), backgroundColor: Colors.green),
-        );
-        _load();
-        if (widget.onStatsChanged != null) widget.onStatsChanged!();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red),
-        );
+    // Confirmación Explícita (Requisito HU_GP)
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirmar Eliminación'),
+        content: const Text('¿Está seguro que desea eliminar este producto? Esta acción no se puede deshacer.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Eliminar')),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _repo.deleteProduct(id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('✅ Producto eliminado satisfactoriamente'), backgroundColor: Colors.green),
+          );
+          _load();
+          if (widget.onStatsChanged != null) widget.onStatsChanged!();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
+          );
+        }
       }
     }
   }
@@ -78,6 +100,8 @@ class _ProductListPageState extends State<ProductListPage> {
     final categoriaCtrl = TextEditingController(text: product?.categoria ?? '');
     final stockCriticoCtrl = TextEditingController(text: product?.stockCritico?.toString() ?? '2');
     final margenCtrl = TextEditingController(text: product?.margenGanancia?.toString() ?? '30');
+    final unidadCtrl = TextEditingController(text: product?.unidadMedida ?? 'UND');
+    final notasCtrl = TextEditingController(text: product?.notas ?? '');
     bool esFavorito = product?.esFavorito ?? false;
     double precioSugerido = 0.0;
 
@@ -134,16 +158,36 @@ class _ProductListPageState extends State<ProductListPage> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextField(
-                  controller: categoriaCtrl,
-                  style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                  decoration: InputDecoration(
-                    labelText: 'Categoría (opcional)',
-                    labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
-                    border: const OutlineInputBorder(),
-                    filled: true,
-                    fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: unidadCtrl,
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                        decoration: InputDecoration(
+                          labelText: 'Unidad Medida',
+                          labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                          border: const OutlineInputBorder(),
+                          filled: true,
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: categoriaCtrl,
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                        decoration: InputDecoration(
+                          labelText: 'Categoría',
+                          labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                          border: const OutlineInputBorder(),
+                          filled: true,
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -186,73 +230,6 @@ class _ProductListPageState extends State<ProductListPage> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                Card(
-                  color: isDark ? Colors.blue[900] : Colors.blue[50],
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.lightbulb, color: Colors.orange[400], size: 20),
-                            const SizedBox(width: 8),
-                            Text('Sugerir Precio por Margen', style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Text('Margen %: ', style: TextStyle(color: isDark ? Colors.white70 : Colors.black54)),
-                            Expanded(
-                              child: TextField(
-                                controller: margenCtrl,
-                                keyboardType: TextInputType.number,
-                                style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                                decoration: InputDecoration(
-                                  border: const OutlineInputBorder(),
-                                  filled: true,
-                                  fillColor: isDark ? Colors.grey[700] : Colors.white,
-                                ),
-                                onChanged: (v) {
-                                  final costo = double.tryParse(costoCtrl.text) ?? 0.0;
-                                  final margen = double.tryParse(v) ?? 30.0;
-                                  precioSugerido = costo > 0 ? costo * (1 + margen / 100) : 0.0;
-                                  setModalState(() {});
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (precioSugerido > 0) ...[
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Precio sugerido:', style: TextStyle(color: isDark ? Colors.white70 : Colors.black54)),
-                              Text('\$${precioSugerido.toStringAsFixed(2)}', style: TextStyle(color: Colors.green[400], fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: () {
-                                precioCtrl.text = precioSugerido.toStringAsFixed(2);
-                                setModalState(() {});
-                              },
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: Colors.blue[400]!),
-                              ),
-                              child: Text('Aplicar Precio Sugerido', style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
@@ -288,23 +265,16 @@ class _ProductListPageState extends State<ProductListPage> {
                 ),
                 const SizedBox(height: 12),
                 TextField(
-                  controller: stockCriticoCtrl,
-                  keyboardType: TextInputType.number,
+                  controller: notasCtrl,
+                  maxLines: 2,
                   style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                   decoration: InputDecoration(
-                    labelText: 'Stock Crítico (alerta)',
+                    labelText: 'Notas / Componentes',
                     labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
                     border: const OutlineInputBorder(),
                     filled: true,
                     fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
                   ),
-                ),
-                const SizedBox(height: 16),
-                SwitchListTile(
-                  title: Text('⭐ Marcar como favorito', style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
-                  subtitle: Text('Aparecerá en lista de favoritos', style: TextStyle(color: isDark ? Colors.white60 : Colors.black54)),
-                  value: esFavorito,
-                  onChanged: (v) => esFavorito = v,
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
@@ -312,25 +282,56 @@ class _ProductListPageState extends State<ProductListPage> {
                   height: 50,
                   child: ElevatedButton.icon(
                     onPressed: () async {
+                      // Validaciones HU_GP
                       if (nombreCtrl.text.isEmpty || codigoCtrl.text.isEmpty || precioCtrl.text.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('⚠️ Complete los campos obligatorios'), backgroundColor: Colors.orange),
                         );
                         return;
                       }
+
+                      final costo = double.tryParse(costoCtrl.text) ?? 0.0;
+                      final precio = double.tryParse(precioCtrl.text);
+                      final stock = int.tryParse(stockCtrl.text) ?? 0;
+                      final stockMin = int.tryParse(stockMinCtrl.text) ?? 0;
+
+                      if (precio == null || precio <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('⚠️ El precio debe ser un valor positivo'), backgroundColor: Colors.orange),
+                        );
+                        return;
+                      }
+                      if (stock < 0 || stockMin < 0) {
+                         ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('⚠️ El stock debe ser un valor positivo'), backgroundColor: Colors.orange),
+                        );
+                        return;
+                      }
+
+                      final isUnique = await _isCodeUnique(codigoCtrl.text, excludeId: product?.id);
+                      if (!isUnique) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('⚠️ El código del producto ya existe'), backgroundColor: Colors.orange),
+                        );
+                        return;
+                      }
+
                       try {
                         final newProduct = Product(
                           id: product?.id,
                           nombre: nombreCtrl.text.trim(),
                           codigo: codigoCtrl.text.trim(),
-                          costo: double.tryParse(costoCtrl.text) ?? 0.0,
-                          precioVenta: double.parse(precioCtrl.text),
-                          stockActual: int.tryParse(stockCtrl.text) ?? 0,
-                          stockMinimo: int.tryParse(stockMinCtrl.text) ?? 5,
+                          costo: costo,
+                          precioVenta: precio,
+                          stockActual: stock,
+                          stockMinimo: stockMin,
                           categoria: categoriaCtrl.text.trim().isEmpty ? null : categoriaCtrl.text.trim(),
                           esFavorito: esFavorito,
                           stockCritico: int.tryParse(stockCriticoCtrl.text),
                           margenGanancia: double.tryParse(margenCtrl.text),
+                          unidadMedida: unidadCtrl.text.trim().isEmpty ? 'UND' : unidadCtrl.text.trim(),
+                          activo: product?.activo ?? true,
+                          notas: notasCtrl.text.trim().isEmpty ? null : notasCtrl.text.trim(),
                         );
                         if (product == null) {
                           await _repo.createProduct(newProduct);
@@ -340,7 +341,7 @@ class _ProductListPageState extends State<ProductListPage> {
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(product == null ? '✅ Producto creado' : '✅ Producto actualizado'),
+                              content: Text(product == null ? '✅ Producto registrado satisfactoriamente' : '✅ Producto actualizado'),
                               backgroundColor: Colors.green,
                             ),
                           );
@@ -358,13 +359,10 @@ class _ProductListPageState extends State<ProductListPage> {
                     },
                     icon: const Icon(Icons.save),
                     label: Text(
-                      product == null ? 'CREAR PRODUCTO' : 'ACTUALIZAR PRODUCTO',
+                      product == null ? 'CREAR' : 'ACTUALIZAR',
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                    ),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
                   ),
                 ),
               ],
@@ -375,124 +373,27 @@ class _ProductListPageState extends State<ProductListPage> {
     );
   }
 
-  void _showInventoryMenu() {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('⚙️ Opciones de Inventario', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            const Text('Gestión avanzada de productos', style: TextStyle(color: Colors.grey)),
-            const SizedBox(height: 24),
-            _menuOption(
-              icon: Icons.edit,
-              color: Colors.orange,
-              title: 'Ajustes de Stock',
-              subtitle: 'Ajustar stock tras conteo físico (+/-)',
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const InventoryAdjustmentsPage()));
-              },
-            ),
-            const SizedBox(height: 12),
-            _menuOption(
-              icon: Icons.price_change,
-              color: Colors.green,
-              title: 'Cambio Masivo de Precios',
-              subtitle: 'Modificar precios por porcentaje',
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const BulkPricePage()));
-              },
-            ),
-            const SizedBox(height: 12),
-            _menuOption(
-              icon: Icons.download,
-              color: Colors.blue,
-              title: 'Exportar Catálogo',
-              subtitle: 'Descargar productos en CSV',
-              onTap: () {
-                Navigator.pop(ctx);
-                _exportCsv();
-              },
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _menuOption({
-    required IconData icon,
-    required Color color,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(backgroundColor: color, child: Icon(icon, color: Colors.white, size: 24)),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color)),
-                  Text(subtitle, style: TextStyle(color: Colors.grey[700], fontSize: 12)),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: color),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final filteredList = _products.where((p) =>
+      p.nombre.toLowerCase().contains(_search.text.toLowerCase()) ||
+      p.codigo.toLowerCase().contains(_search.text.toLowerCase()) ||
+      (p.categoria?.toLowerCase().contains(_search.text.toLowerCase()) ?? false)
+    ).toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Inventario'),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.download), onPressed: _exportCsv, tooltip: 'Exportar a CSV'),
+          IconButton(icon: const Icon(Icons.picture_as_pdf), onPressed: _exportPdf, tooltip: 'Exportar Catálogo PDF'),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
         ],
       ),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton.small(
-            heroTag: 'menu',
-            onPressed: _showInventoryMenu,
-            backgroundColor: Colors.orange,
-            child: const Icon(Icons.tune),
-          ),
-          const SizedBox(height: 16),
-          FloatingActionButton(
-            heroTag: 'add',
-            onPressed: () => _showProductForm(),
-            backgroundColor: Colors.blue,
-            child: const Icon(Icons.add),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showProductForm(),
+        child: const Icon(Icons.add),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -504,7 +405,7 @@ class _ProductListPageState extends State<ProductListPage> {
                     controller: _search,
                     style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                     decoration: InputDecoration(
-                      hintText: 'Buscar producto...',
+                      hintText: 'Buscar por nombre, código o categoría...',
                       hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.grey),
                       prefixIcon: Icon(Icons.search, color: isDark ? Colors.white54 : Colors.grey),
                       border: const OutlineInputBorder(),
@@ -515,39 +416,34 @@ class _ProductListPageState extends State<ProductListPage> {
                   ),
                 ),
                 Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _products.where((p) => p.nombre.toLowerCase().contains(_search.text.toLowerCase())).length,
-                    itemBuilder: (ctx, i) {
-                      final p = _products.where((prod) => prod.nombre.toLowerCase().contains(_search.text.toLowerCase())).toList()[i];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: p.stockActual > 0 ? (p.esStockCritico ? Colors.orange : Colors.blue) : Colors.grey,
-                            child: Icon(p.esFavorito ? Icons.star : Icons.inventory_2, color: Colors.white),
-                          ),
-                          title: Text(p.nombre, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (p.categoria != null) Text('📁 ${p.categoria}', style: TextStyle(color: isDark ? Colors.white60 : Colors.black54)),
-                              Text('Stock: ${p.stockActual} ${p.esStockCritico ? '⚠️ Crítico' : ''}', style: TextStyle(color: isDark ? Colors.white60 : Colors.black54)),
-                              Text('\$${p.precioVenta.toStringAsFixed(2)}', style: TextStyle(color: Colors.green[400], fontWeight: FontWeight.bold)),
-                              if (p.margenGanancia != null) Text('Margen: ${p.margenGanancia!.toStringAsFixed(1)}%', style: TextStyle(color: Colors.green[400], fontSize: 12)),
-                            ],
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(icon: Icon(Icons.edit, color: isDark ? Colors.white : Colors.black87), onPressed: () => _showProductForm(product: p)),
-                              IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deleteProduct(p.id!)),
-                            ],
-                          ),
+                  child: filteredList.isEmpty
+                      ? Center(child: Text('No hay productos registrados', style: TextStyle(color: isDark ? Colors.white70 : Colors.grey, fontSize: 18)))
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: filteredList.length,
+                          itemBuilder: (ctx, i) {
+                            final p = filteredList[i];
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              child: ListTile(
+                                leading: CircleAvatar(backgroundColor: p.activo ? (p.stockActual > 0 ? Colors.blue : Colors.grey) : Colors.grey[400], child: Icon(Icons.inventory_2, color: Colors.white)),
+                                title: Text(p.nombre, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
+                                subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                  Text('Código: ${p.codigo}', style: TextStyle(color: isDark ? Colors.white60 : Colors.black54)),
+                                  Text('Stock: ${p.stockActual} ${p.unidadMedida}', style: TextStyle(color: isDark ? Colors.white60 : Colors.black54)),
+                                  Text('\$${p.precioVenta.toStringAsFixed(2)}', style: TextStyle(color: Colors.green[400], fontWeight: FontWeight.bold)),
+                                ]),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(icon: const Icon(Icons.edit), onPressed: () => _showProductForm(product: p)),
+                                    IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deleteProduct(p.id!)),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
                 ),
               ],
             ),

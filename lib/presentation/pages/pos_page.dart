@@ -8,6 +8,8 @@ import '../../core/database/database_helper.dart';
 import '../../core/repositories/product_repository.dart';
 import '../../core/repositories/customer_repository.dart';
 import '../../core/repositories/sale_repository.dart';
+import '../../core/utils/currency_helper.dart';
+import '../../core/utils/pdf_generator.dart';
 import 'paused_sales_page.dart';
 
 class PosPage extends StatefulWidget {
@@ -33,6 +35,8 @@ class _PosPageState extends State<PosPage> {
   double _amountPaid = 0.0;
   late TextEditingController _amountPaidController;
   String _selectedCurrency = 'CUP';
+  double _mlcRate = 120.0;
+  double _usdRate = 1.0;
   bool _isCredit = false;
   String _creditNotes = '';
   bool _applyDiscount = false;
@@ -58,13 +62,19 @@ class _PosPageState extends State<PosPage> {
     setState(() => _isLoading = true);
     _products = await _productRepo.getAllProducts();
     _customers = await _customerRepo.getAllCustomers();
+    _mlcRate = await CurrencyHelper.getMlcRate();
+    _usdRate = await CurrencyHelper.getUsdRate();
     setState(() => _isLoading = false);
+  }
+
+  double _convert(double cupAmount) {
+    return CurrencyHelper.convertFromCUP(cupAmount, _selectedCurrency, _mlcRate, _usdRate);
   }
 
   void _addToCart(Product product) {
     if (product.stockActual <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('❌ Sin stock'), backgroundColor: Colors.red, duration: Duration(seconds: 1)),
+        const SnackBar(content: Text('⚠️ No hay stock suficiente'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -78,7 +88,7 @@ class _PosPageState extends State<PosPage> {
         _cart.add(CartItem(
           productoId: product.id!,
           nombre: product.nombre,
-          precio: product.precioVenta,
+          precioCUP: product.precioVenta,
           cantidad: 1,
           stockDisponible: product.stockActual,
         ));
@@ -108,37 +118,29 @@ class _PosPageState extends State<PosPage> {
   void _removeFromCart(int index) => setState(() => _cart.removeAt(index));
   void _clearCart() => setState(() => _cart.clear());
 
-  double get _subtotal => _cart.fold(0.0, (sum, c) => sum + c.subtotal);
-  double get _discountAmount => _applyDiscount ? _subtotal * (_discountPercent / 100) : 0.0;
-  double get _total => _subtotal - _discountAmount;
-  double get _change => _isCredit ? 0.0 : (_amountPaid >= _total ? _amountPaid - _total : 0.0);
-  double get _pending => _isCredit ? _total - _amountPaid : 0.0;
+  double get _subtotalCUP => _cart.fold(0.0, (sum, c) => sum + c.subtotalCUP);
+  double get _discountAmountCUP => _applyDiscount ? _subtotalCUP * (_discountPercent / 100) : 0.0;
+  double get _totalCUP => _subtotalCUP - _discountAmountCUP;
+  double get _subtotal => _convert(_subtotalCUP);
+  double get _discountAmount => _convert(_discountAmountCUP);
+  double get _total => _convert(_totalCUP);
+  double get _amountPaidForeign => _convert(_amountPaid);
+  double get _change => _isCredit ? 0.0 : (_amountPaidForeign >= _total ? _amountPaidForeign - _total : 0.0);
+  double get _pending => _isCredit ? _total - _amountPaidForeign : 0.0;
 
   Future<void> _pauseSale() async {
     if (_cart.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ Agrega productos'), backgroundColor: Colors.orange),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ No hay productos en el carrito'), backgroundColor: Colors.orange));
       return;
     }
     final name = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('⏸️ Pausar Venta'),
-        content: TextField(
-          controller: _pauseNameController,
-          decoration: const InputDecoration(
-            labelText: 'Nombre',
-            border: OutlineInputBorder(),
-          ),
-          autofocus: true,
-        ),
+        content: TextField(controller: _pauseNameController, decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder()), autofocus: true),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(_pauseNameController.text),
-            child: const Text('Pausar'),
-          ),
+          ElevatedButton(onPressed: () => Navigator.of(ctx).pop(_pauseNameController.text), child: const Text('Pausar')),
         ],
       ),
     );
@@ -150,11 +152,9 @@ class _PosPageState extends State<PosPage> {
           'fecha_creacion': DateTime.now().toIso8601String(),
           'cliente_id': _selectedCustomer?.id,
           'productos': jsonEncode(_cart.map((c) => c.toMap()).toList()),
-          'total': _total,
+          'total': _totalCUP,
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Venta pausada'), backgroundColor: Colors.green),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Venta pausada'), backgroundColor: Colors.green));
         _clearCart();
         _pauseNameController.clear();
       } catch (e) {
@@ -169,15 +169,12 @@ class _PosPageState extends State<PosPage> {
       setState(() {
         _cart = (jsonDecode(result['productos'] as String) as List).map((p) => CartItem.fromMap(p)).toList();
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Venta retomada'), backgroundColor: Colors.green),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Venta retomada'), backgroundColor: Colors.green));
     }
   }
 
   void _showNumericKeypad() {
     double tempAmount = _amountPaid;
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -187,12 +184,12 @@ class _PosPageState extends State<PosPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('💵 Ingresar Monto', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Text('💵 Ingresar Monto ($_selectedCurrency)', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(8)),
-                child: Text('\$${tempAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.green)),
+                child: Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${tempAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.green)),
               ),
               const SizedBox(height: 16),
               GridView.count(
@@ -204,15 +201,9 @@ class _PosPageState extends State<PosPage> {
                 children: [
                   for (var i = 1; i <= 9; i++)
                     ElevatedButton(
-                      onPressed: () => setModalState(() {
-                        tempAmount = double.parse('${(tempAmount * 100).toInt()}$i') / 100;
-                      }),
+                      onPressed: () => setModalState(() => tempAmount = double.parse('${(tempAmount * 100).toInt()}$i') / 100),
                       child: Text('$i', style: const TextStyle(fontSize: 24, color: Colors.black)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
-                        elevation: 2,
-                      ),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black, elevation: 2),
                     ),
                   ElevatedButton(
                     onPressed: () => setModalState(() => tempAmount = 0),
@@ -220,22 +211,12 @@ class _PosPageState extends State<PosPage> {
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.red[100]),
                   ),
                   ElevatedButton(
-                    onPressed: () => setModalState(() {
-                      tempAmount = double.parse('${(tempAmount * 100).toInt()}0') / 100;
-                    }),
+                    onPressed: () => setModalState(() => tempAmount = double.parse('${(tempAmount * 100).toInt()}0') / 100),
                     child: const Text('0', style: TextStyle(fontSize: 24, color: Colors.black)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
-                      elevation: 2,
-                    ),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black, elevation: 2),
                   ),
                   ElevatedButton(
-                    onPressed: () => setModalState(() {
-                      if (tempAmount > 0) {
-                        tempAmount = (tempAmount * 100).toInt() ~/ 10 / 100;
-                      }
-                    }),
+                    onPressed: () => setModalState(() { if (tempAmount > 0) tempAmount = (tempAmount * 100).toInt() ~/ 10 / 100; }),
                     child: const Icon(Icons.backspace, size: 24, color: Colors.orange),
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.orange[100]),
                   ),
@@ -254,10 +235,7 @@ class _PosPageState extends State<PosPage> {
                     Navigator.pop(ctx);
                   },
                   child: const Text('LISTO', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                  ),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
                 ),
               ),
             ],
@@ -269,44 +247,31 @@ class _PosPageState extends State<PosPage> {
 
   Future<void> _completeSale() async {
     if (_cart.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ Carrito vacío'), backgroundColor: Colors.orange),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ El carrito está vacío'), backgroundColor: Colors.orange));
       return;
     }
-    if (!_isCredit && _amountPaid < _total) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('⚠️ Pago insuficiente. Faltan \$${(_total - _amountPaid).toStringAsFixed(2)}'), backgroundColor: Colors.orange),
-      );
+    final totalCUPToPay = CurrencyHelper.convertToCUP(_total, _selectedCurrency, _mlcRate, _usdRate);
+    final paidCUP = CurrencyHelper.convertToCUP(_amountPaidForeign, _selectedCurrency, _mlcRate, _usdRate);
+    
+    if (!_isCredit && paidCUP < totalCUPToPay) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('⚠️ Pago insuficiente. Faltan \$${(totalCUPToPay - paidCUP).toStringAsFixed(2)} CUP'), backgroundColor: Colors.orange));
       return;
     }
 
     try {
-      final lines = _cart.map((c) => SaleLine(
-        ventaId: 0,
-        productoId: c.productoId,
-        cantidad: c.cantidad,
-        precioUnitario: c.precio,
-        subtotal: c.subtotal,
-      )).toList();
+      final lines = _cart.map((c) => SaleLine(ventaId: 0, productoId: c.productoId, cantidad: c.cantidad, precioUnitario: c.precioCUP, subtotal: c.subtotalCUP)).toList();
+      final saleId = await _saleRepo.createSale(_selectedCustomer?.id, lines, totalCUPToPay, _isCredit ? paidCUP : totalCUPToPay, _isCredit ? (totalCUPToPay - paidCUP) : 0.0, _creditNotes, _selectedCurrency, _selectedCurrency == 'CUP' ? 1.0 : (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate));
 
-      await _saleRepo.createSale(
-        _selectedCustomer?.id,
-        lines,
-        _total,
-        _isCredit ? _amountPaid : _total,
-        _isCredit ? (_total - _amountPaid) : 0.0,
-        _creditNotes,
-        _selectedCurrency,
-        1.0,
-      );
+      final createdSale = await _saleRepo.getSaleById(saleId);
+      if (createdSale != null) {
+        final saleLines = await _saleRepo.getSaleLines(saleId);
+        final finalLines = saleLines.map((l) => SaleLine(ventaId: saleId, productoId: l.productoId, cantidad: l.cantidad, precioUnitario: l.precioUnitario, subtotal: l.subtotal)).toList();
+        await PdfGenerator.generateSaleTicket(createdSale, finalLines);
+      }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('✅ Venta: \$${_total.toStringAsFixed(2)}'), backgroundColor: Colors.green, duration: const Duration(seconds: 2)),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('✅ Venta registrada satisfactoriamente'), backgroundColor: Colors.green, duration: const Duration(seconds: 2)));
 
       if (widget.onSaleCompleted != null) widget.onSaleCompleted!();
-
       _clearCart();
       _amountPaid = 0.0;
       _amountPaidController.text = '';
@@ -315,9 +280,7 @@ class _PosPageState extends State<PosPage> {
       _applyDiscount = false;
       _discountPercent = 0.0;
       _loadData();
-
       if (Navigator.canPop(context)) Navigator.pop(context);
-
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red));
     }
@@ -385,7 +348,28 @@ class _PosPageState extends State<PosPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text('🛒 Carrito', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-                    IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(ctx)),
+                    Row(
+                      children: [
+                        DropdownButton<String>(
+                          value: _selectedCurrency,
+                          dropdownColor: Colors.blue[800],
+                          underline: const SizedBox(),
+                          items: const [
+                            DropdownMenuItem(value: 'CUP', child: Text('🇨🇺 CUP', style: TextStyle(color: Colors.white))),
+                            DropdownMenuItem(value: 'MLC', child: Text('💳 MLC', style: TextStyle(color: Colors.white))),
+                            DropdownMenuItem(value: 'USD', child: Text('🇺 USD', style: TextStyle(color: Colors.white))),
+                          ],
+                          onChanged: (v) {
+                            if (v != null) {
+                              setModalState(() => _selectedCurrency = v);
+                              setState(() => _selectedCurrency = v);
+                              _loadData();
+                            }
+                          },
+                        ),
+                        IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(ctx)),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -438,7 +422,7 @@ class _PosPageState extends State<PosPage> {
                               child: ListTile(
                                 leading: CircleAvatar(backgroundColor: Colors.blue, child: Text('${c.cantidad}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
                                 title: Text(c.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                subtitle: Text('\$${c.precio.toStringAsFixed(2)} c/u'),
+                                subtitle: Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_convert(c.precioCUP).toStringAsFixed(2)} c/u'),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -465,13 +449,10 @@ class _PosPageState extends State<PosPage> {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Text('💲 Descuento Global', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                    Switch(
-                                      value: _applyDiscount,
-                                      onChanged: (v) {
-                                        setModalState(() => _applyDiscount = v);
-                                        setState(() => _applyDiscount = v);
-                                      },
-                                    ),
+                                    Switch(value: _applyDiscount, onChanged: (v) {
+                                      setModalState(() => _applyDiscount = v);
+                                      setState(() => _applyDiscount = v);
+                                    }),
                                   ],
                                 ),
                                 if (_applyDiscount) ...[
@@ -499,106 +480,8 @@ class _PosPageState extends State<PosPage> {
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text('Ahorro:', style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold)),
-                                      Text('-\$${_discountAmount.toStringAsFixed(2)}', style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold, fontSize: 16)),
+                                      Text('-${_selectedCurrency == 'CUP' ? '\$' : ''}${_discountAmount.toStringAsFixed(2)}', style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold, fontSize: 16)),
                                     ],
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('💱 Moneda', style: TextStyle(fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 8),
-                                DropdownButtonFormField<String>(
-                                  decoration: const InputDecoration(border: OutlineInputBorder()),
-                                  value: _selectedCurrency,
-                                  items: const [
-                                    DropdownMenuItem(value: 'CUP', child: Text('🇨🇺 CUP')),
-                                    DropdownMenuItem(value: 'MLC', child: Text('💳 MLC')),
-                                    DropdownMenuItem(value: 'USD', child: Text('🇺🇸 USD')),
-                                  ],
-                                  onChanged: (v) => setModalState(() => _selectedCurrency = v!),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('💵 Pago', style: TextStyle(fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: TextField(
-                                        readOnly: true,
-                                        decoration: InputDecoration(
-                                          border: const OutlineInputBorder(),
-                                          hintText: _amountPaid > 0 ? '\$${_amountPaid.toStringAsFixed(2)}' : 'Monto pagado',
-                                          filled: _amountPaid > 0,
-                                          fillColor: _amountPaid > 0 ? Colors.green[50] : null,
-                                        ),
-                                        controller: _amountPaidController,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    ElevatedButton.icon(
-                                      onPressed: _showNumericKeypad,
-                                      icon: const Icon(Icons.keyboard, size: 24),
-                                      label: const Text('Teclado'),
-                                      style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16)),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Card(
-                          color: _isCredit ? Colors.orange[50] : null,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('⚠️ Marcar como Fiado', style: TextStyle(fontWeight: FontWeight.bold)),
-                                    Switch(
-                                      value: _isCredit,
-                                      onChanged: (v) {
-                                        setModalState(() => _isCredit = v);
-                                        setState(() => _isCredit = v);
-                                      },
-                                    ),
-                                  ],
-                                ),
-                                if (_isCredit) ...[
-                                  const SizedBox(height: 12),
-                                  TextField(
-                                    decoration: const InputDecoration(labelText: 'Notas de crédito', border: OutlineInputBorder()),
-                                    maxLines: 2,
-                                    onChanged: (v) => _creditNotes = v,
                                   ),
                                 ],
                               ],
@@ -608,49 +491,47 @@ class _PosPageState extends State<PosPage> {
                       ),
                       Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4, offset: const Offset(0, -2))],
-                        ),
+                        decoration: BoxDecoration(color: Colors.grey[100], boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4, offset: const Offset(0, -2))]),
                         child: Column(
                           children: [
                             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                               const Text('Subtotal:', style: TextStyle(fontSize: 16)),
-                              Text('\$${_subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16)),
+                              Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16)),
                             ]),
                             const SizedBox(height: 8),
-                            if (_applyDiscount) Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                              Text('Descuento (${_discountPercent.toInt()}%):', style: TextStyle(color: Colors.green[700])),
-                              Text('-\$${_discountAmount.toStringAsFixed(2)}', style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold)),
-                            ]),
+                            if (_applyDiscount)
+                              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                Text('Descuento (${_discountPercent.toInt()}%):', style: TextStyle(color: Colors.green[700])),
+                                Text('-${_selectedCurrency == 'CUP' ? '\$' : ''}${_discountAmount.toStringAsFixed(2)}', style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold)),
+                              ]),
                             const SizedBox(height: 8),
                             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                               const Text('TOTAL:', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                              Text('\$${_total.toStringAsFixed(2)} ($_selectedCurrency)', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.green)),
+                              Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_total.toStringAsFixed(2)} $_selectedCurrency', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.green)),
                             ]),
                             const SizedBox(height: 12),
                             const Divider(),
                             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                               Text('Pagado:', style: TextStyle(fontSize: 16, color: Colors.grey[700])),
-                              Text('\$${_amountPaid.toStringAsFixed(2)}', style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+                              Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_amountPaidForeign.toStringAsFixed(2)}', style: TextStyle(fontSize: 16, color: Colors.grey[700])),
                             ]),
                             const SizedBox(height: 8),
                             if (!_isCredit) ...[
-                              if (_amountPaid < _total)
+                              if (_amountPaidForeign < _total)
                                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                                   const Text('⚠️ Faltante:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
-                                  Text('\$${(_total - _amountPaid).toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
+                                  Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${(_total - _amountPaidForeign).toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
                                 ])
-                              else if (_amountPaid >= _total)
+                              else if (_amountPaidForeign >= _total)
                                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                                   const Text('🔄 CAMBIO:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
-                                  Text('\$${_change.toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue)),
+                                  Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_change.toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue)),
                                 ]),
                             ],
-                            if (_isCredit && _amountPaid > 0)
+                            if (_isCredit && _amountPaidForeign > 0)
                               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                                 const Text('⚠️ Pendiente:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
-                                Text('\$${_pending.toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
+                                Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_pending.toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
                               ]),
                             const SizedBox(height: 16),
                             SizedBox(
@@ -659,7 +540,7 @@ class _PosPageState extends State<PosPage> {
                               child: ElevatedButton.icon(
                                 onPressed: _cart.isEmpty ? null : _completeSale,
                                 icon: const Icon(Icons.check_circle, size: 26),
-                                label: const Text('CONFIRMAR VENTA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                label: Text('CONFIRMAR VENTA ($_selectedCurrency)', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.green,
                                   foregroundColor: Colors.white,
@@ -686,7 +567,26 @@ class _PosPageState extends State<PosPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Punto de Venta'),
+        title: Row(
+          children: [
+            const Text('Punto de Venta'),
+            const SizedBox(width: 12),
+            DropdownButton<String>(
+              value: _selectedCurrency,
+              dropdownColor: Theme.of(context).appBarTheme.backgroundColor,
+              underline: const SizedBox(),
+              items: const [
+                DropdownMenuItem(value: 'CUP', child: Text('🇨🇺 CUP')),
+                DropdownMenuItem(value: 'MLC', child: Text('💳 MLC')),
+                DropdownMenuItem(value: 'USD', child: Text('🇺🇸 USD')),
+              ],
+              onChanged: (v) {
+                if (v != null) setState(() => _selectedCurrency = v);
+                _loadData();
+              },
+            ),
+          ],
+        ),
         centerTitle: true,
         actions: [
           IconButton(icon: const Icon(Icons.play_circle_outline), onPressed: _resumeSale, tooltip: 'Retomar venta'),
@@ -703,7 +603,7 @@ class _PosPageState extends State<PosPage> {
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      hintText: 'Buscar producto...',
+                      hintText: 'Buscar por código o nombre...',
                       prefixIcon: const Icon(Icons.search),
                       border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                       filled: true,
@@ -715,18 +615,21 @@ class _PosPageState extends State<PosPage> {
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _products.where((p) => p.nombre.toLowerCase().contains(_searchController.text.toLowerCase())).length,
+                    itemCount: _products.where((p) => p.nombre.toLowerCase().contains(_searchController.text.toLowerCase()) || p.codigo.toLowerCase().contains(_searchController.text.toLowerCase())).length,
                     itemBuilder: (ctx, i) {
-                      final p = _products.where((prod) => prod.nombre.toLowerCase().contains(_searchController.text.toLowerCase())).toList()[i];
+                      final p = _products.where((prod) => prod.nombre.toLowerCase().contains(_searchController.text.toLowerCase()) || prod.codigo.toLowerCase().contains(_searchController.text.toLowerCase())).toList()[i];
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         child: ListTile(
                           leading: CircleAvatar(backgroundColor: p.stockActual > 0 ? Colors.blue : Colors.grey, child: Icon(Icons.inventory_2, color: Colors.white)),
                           title: Text(p.nombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text('Stock: ${p.stockActual}'),
-                            Text('\$${p.precioVenta.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                          ]),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Stock: ${p.stockActual}'),
+                              Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_convert(p.precioVenta).toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
                           trailing: ElevatedButton(
                             onPressed: p.stockActual > 0 ? () => _addToCart(p) : null,
                             child: const Text('Agregar'),
@@ -751,7 +654,7 @@ class _PosPageState extends State<PosPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('${_cart.length} productos', style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                              Text('Total: \$${_total.toStringAsFixed(2)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
+                              Text('Total: ${_selectedCurrency == 'CUP' ? '\$' : ''}${_total.toStringAsFixed(2)} $_selectedCurrency', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
                             ],
                           ),
                         ),
@@ -782,33 +685,14 @@ class _PosPageState extends State<PosPage> {
 class CartItem {
   final int productoId;
   final String nombre;
-  final double precio;
+  final double precioCUP;
   int cantidad;
   final int stockDisponible;
 
-  CartItem({
-    required this.productoId,
-    required this.nombre,
-    required this.precio,
-    required this.cantidad,
-    required this.stockDisponible,
-  });
+  CartItem({required this.productoId, required this.nombre, required this.precioCUP, required this.cantidad, required this.stockDisponible});
 
-  double get subtotal => precio * cantidad;
+  double get subtotalCUP => precioCUP * cantidad;
 
-  Map<String, dynamic> toMap() => {
-    'productoId': productoId,
-    'nombre': nombre,
-    'precio': precio,
-    'cantidad': cantidad,
-    'stockDisponible': stockDisponible,
-  };
-
-  factory CartItem.fromMap(Map<String, dynamic> map) => CartItem(
-    productoId: map['productoId'] as int,
-    nombre: map['nombre'] as String,
-    precio: (map['precio'] as num).toDouble(),
-    cantidad: map['cantidad'] as int,
-    stockDisponible: map['stockDisponible'] as int,
-  );
+  Map<String, dynamic> toMap() => {'productoId': productoId, 'nombre': nombre, 'precioCUP': precioCUP, 'cantidad': cantidad, 'stockDisponible': stockDisponible};
+  factory CartItem.fromMap(Map<String, dynamic> map) => CartItem(productoId: map['productoId'] as int, nombre: map['nombre'] as String, precioCUP: (map['precioCUP'] as num).toDouble(), cantidad: map['cantidad'] as int, stockDisponible: map['stockDisponible'] as int);
 }

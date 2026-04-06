@@ -26,7 +26,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 6,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -45,7 +45,10 @@ class DatabaseHelper {
         categoria TEXT,
         es_favorito INTEGER DEFAULT 0,
         stock_critico INTEGER,
-        margen_ganancia REAL
+        margen_ganancia REAL,
+        unidad_medida TEXT DEFAULT 'UND',
+        activo INTEGER DEFAULT 1,
+        notas TEXT
       )
     ''');
 
@@ -152,6 +155,15 @@ class DatabaseHelper {
         notas TEXT
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE notas_diarias (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        fecha TEXT NOT NULL,
+        contenido TEXT,
+        creado_en TEXT NOT NULL
+      )
+    ''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -176,6 +188,27 @@ class DatabaseHelper {
           )
         ''');
       } catch (_) {}
+    }
+    if (oldVersion < 4) {
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS notas_diarias (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha TEXT NOT NULL,
+            contenido TEXT,
+            creado_en TEXT NOT NULL
+          )
+        ''');
+      } catch (_) {}
+    }
+    if (oldVersion < 5) {
+      try { await db.execute('CREATE INDEX IF NOT EXISTS idx_ventas_fecha ON ventas(fecha)'); } catch (_) {}
+      try { await db.execute('CREATE INDEX IF NOT EXISTS idx_compras_fecha ON compras(fecha)'); } catch (_) {}
+    }
+    if (oldVersion < 6) {
+      try { await db.execute('ALTER TABLE productos ADD COLUMN unidad_medida TEXT DEFAULT \'UND\''); } catch (_) {}
+      try { await db.execute('ALTER TABLE productos ADD COLUMN activo INTEGER DEFAULT 1'); } catch (_) {}
+      try { await db.execute('ALTER TABLE productos ADD COLUMN notas TEXT'); } catch (_) {}
     }
   }
 }

@@ -1,13 +1,14 @@
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/repositories/product_repository.dart';
 import '../../core/repositories/sale_repository.dart';
 import '../../core/models/product.dart';
 import 'package:sqflite/sqflite.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
@@ -138,10 +139,10 @@ class _ReportsPageState extends State<ReportsPage> {
   Future<void> _exportProductsCsv() async {
     try {
       final products = await _productRepo.getAllProducts();
-      final csvContent = 'ID,Nombre,Código,Costo,Precio Venta,Stock,Categoría\n' +
+      final header = '${AppConstants.appName} - Catálogo de Productos\nFecha: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}\n\n';
+      final csvContent = header + 'ID,Nombre,Código,Costo,Precio Venta,Stock,Categoría\n' +
           products.map((p) => '${p.id},"${p.nombre}","${p.codigo}",${p.costo},${p.precioVenta},${p.stockActual},"${p.categoria ?? ''}"').join('\n');
       
-      // Guardar archivo
       final directory = await getApplicationDocumentsDirectory();
       final filePath = '${directory.path}/productos_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.csv';
       final file = File(filePath);
@@ -164,7 +165,8 @@ class _ReportsPageState extends State<ReportsPage> {
   Future<void> _exportSalesCsv() async {
     try {
       final sales = await _saleRepo.getTodaySales();
-      final csvContent = 'ID,Fecha,Total,Cliente,Monto Pagado,Monto Pendiente\n' +
+      final header = '${AppConstants.appName} - Ventas del Día\nFecha: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}\n\n';
+      final csvContent = header + 'ID,Fecha,Total,Cliente,Monto Pagado,Monto Pendiente\n' +
           sales.map((s) => '${s.id},${s.fecha},${s.total},"${s.clienteId ?? 'General'}",${s.montoPagado},${s.montoPendiente}').join('\n');
       
       final directory = await getApplicationDocumentsDirectory();
@@ -189,7 +191,8 @@ class _ReportsPageState extends State<ReportsPage> {
   Future<void> _exportTop10Csv() async {
     try {
       final top10 = await _saleRepo.getTop10Products();
-      final csvContent = 'Producto,ID,Total Vendido\n' +
+      final header = '${AppConstants.appName} - Top 10 Productos Más Vendidos\nFecha: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}\n\n';
+      final csvContent = header + 'Producto,ID,Total Vendido\n' +
           top10.map((p) => '"${p['nombre']}",${p['id']},${p['total_vendido']}').join('\n');
       
       final directory = await getApplicationDocumentsDirectory();
@@ -216,6 +219,69 @@ class _ReportsPageState extends State<ReportsPage> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
+          // RF 67: Gráfico de ventas por día
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('📊 Ventas Últimos 7 Días', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 200,
+                    child: FutureBuilder<List<Map<String, dynamic>>>(
+                      future: _getSalesByDay(),
+                      builder: (ctx, snapshot) {
+                        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                        final data = snapshot.data!;
+                        return BarChart(
+                          BarChartData(
+                            alignment: BarChartAlignment.spaceAround,
+                            maxY: data.isEmpty ? 10 : data.map((e) => e['total'] as double).reduce((a, b) => a > b ? a : b) * 1.2,
+                            barTouchData: BarTouchData(enabled: true),
+                            titlesData: FlTitlesData(
+                              show: true,
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  getTitlesWidget: (value, meta) {
+                                    final index = value.toInt();
+                                    if (index < 0 || index >= data.length) return const Text('');
+                                    final day = DateFormat('dd').format(DateTime.parse(data[index]['fecha'] as String));
+                                    return Text(day, style: const TextStyle(fontSize: 10));
+                                  },
+                                ),
+                              ),
+                              leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            ),
+                            gridData: FlGridData(show: false),
+                            borderData: FlBorderData(show: false),
+                            barGroups: data.asMap().entries.map((entry) {
+                              return BarChartGroupData(
+                                x: entry.key,
+                                barRods: [
+                                  BarChartRodData(
+                                    toY: entry.value['total'] as double,
+                                    color: Colors.blue,
+                                    width: 16,
+                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           _reportCard(
             '💰 Ventas del Día',
             'Resumen de ventas hoy',
@@ -282,6 +348,18 @@ class _ReportsPageState extends State<ReportsPage> {
         ],
       ),
     );
+  }
+
+  Future<List<Map<String, dynamic>>> _getSalesByDay() async {
+    final db = await DatabaseHelper.instance.database;
+    final results = await db.rawQuery('''
+      SELECT DATE(fecha) as fecha, SUM(total) as total
+      FROM ventas
+      WHERE fecha >= date('now', '-7 days')
+      GROUP BY DATE(fecha)
+      ORDER BY fecha ASC
+    ''');
+    return results;
   }
 
   Future<void> _showTop10Products() async {
@@ -373,6 +451,15 @@ class _ReportsPageState extends State<ReportsPage> {
             },
           ),
           const SizedBox(height: 12),
+          // RF 62: Reporte de Rotación
+          _reportCard(
+            '🔄 Rotación de Productos',
+            'Velocidad de venta vs stock',
+            Icons.speed,
+            Colors.teal,
+            () async => _showRotationReport(),
+          ),
+          const SizedBox(height: 12),
           _reportCard(
             '📊 Movimientos por Producto',
             'Historial de entradas/salidas',
@@ -426,6 +513,53 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
+  // RF 62: Reporte de Rotación
+  Future<void> _showRotationReport() async {
+    final db = await DatabaseHelper.instance.database;
+    final products = await _productRepo.getAllProducts();
+    
+    final rotationData = await Future.wait(products.map((p) async {
+      final sold = await db.rawQuery(
+        'SELECT COALESCE(SUM(cantidad), 0) as total FROM venta_detalles WHERE producto_id = ?',
+        [p.id],
+      );
+      final totalSold = (sold.first['total'] as num).toDouble();
+      final rotation = p.stockActual > 0 ? totalSold / p.stockActual : 0.0;
+      return {'producto': p.nombre, 'vendido': totalSold, 'stock': p.stockActual, 'rotacion': rotation};
+    }).toList());
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('🔄 Rotación de Productos'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 300,
+          child: ListView.builder(
+            itemCount: rotationData.length,
+            itemBuilder: (ctx, i) {
+              final r = rotationData[i];
+              return ListTile(
+                title: Text(r['producto'] as String),
+                subtitle: Text('Vendido: ${r['vendido']} | Stock: ${r['stock']}'),
+                trailing: Text(
+                  '${(r['rotacion'] as double).toStringAsFixed(2)}x',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: (r['rotacion'] as double) > 1 ? Colors.green : Colors.orange,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar'))],
+      ),
+    );
+  }
+
   Widget _buildAdvancedTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -462,6 +596,24 @@ class _ReportsPageState extends State<ReportsPage> {
             },
           ),
           const SizedBox(height: 12),
+          // RF 63: Margen por Producto
+          _reportCard(
+            '📊 Margen por Producto',
+            'Rentabilidad individual',
+            Icons.calculate,
+            Colors.purple,
+            () async => _showMarginReport(),
+          ),
+          const SizedBox(height: 12),
+          // RF 64: Flujo de Caja
+          _reportCard(
+            '💵 Flujo de Caja',
+            'Ingresos vs Egresos',
+            Icons.account_balance,
+            Colors.blue,
+            () async => _showCashFlowReport(),
+          ),
+          const SizedBox(height: 12),
           _reportCard(
             '🔄 Exportar Reportes',
             'Descargar en CSV',
@@ -470,6 +622,78 @@ class _ReportsPageState extends State<ReportsPage> {
             () => _showExportOptions(),
           ),
         ],
+      ),
+    );
+  }
+
+  // RF 63: Margen por Producto
+  Future<void> _showMarginReport() async {
+    final products = await _productRepo.getAllProducts();
+    final marginData = products.where((p) => p.costo != null && p.costo! > 0).map((p) {
+      final margin = ((p.precioVenta - p.costo!) / p.precioVenta) * 100;
+      return {'producto': p.nombre, 'margen': margin, 'precio': p.precioVenta, 'costo': p.costo!};
+    }).toList();
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('📊 Margen por Producto'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 300,
+          child: ListView.builder(
+            itemCount: marginData.length,
+            itemBuilder: (ctx, i) {
+              final m = marginData[i];
+              return ListTile(
+                title: Text(m['producto'] as String),
+                subtitle: Text('Costo: \$${(m['costo'] as double).toStringAsFixed(2)} | Venta: \$${(m['precio'] as double).toStringAsFixed(2)}'),
+                trailing: Text(
+                  '${(m['margen'] as double).toStringAsFixed(1)}%',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: (m['margen'] as double) > 30 ? Colors.green : (m['margen'] as double) > 15 ? Colors.orange : Colors.red,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar'))],
+      ),
+    );
+  }
+
+  // RF 64: Flujo de Caja
+  Future<void> _showCashFlowReport() async {
+    final db = await DatabaseHelper.instance.database;
+    final sales = await db.rawQuery('SELECT COALESCE(SUM(total), 0) as total FROM ventas');
+    final purchases = await db.rawQuery('SELECT COALESCE(SUM(total), 0) as total FROM compras');
+    
+    final ingresos = (sales.first['total'] as num).toDouble();
+    final egresos = (purchases.first['total'] as num).toDouble();
+    final flujo = ingresos - egresos;
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('💵 Flujo de Caja'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('📥 Ingresos (Ventas): \$${ingresos.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+            Text('📤 Egresos (Compras): \$${egresos.toStringAsFixed(2)}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            const Divider(),
+            Text('💰 Flujo Neto: \$${flujo.toStringAsFixed(2)}', 
+                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: flujo >= 0 ? Colors.green : Colors.red)),
+          ],
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar'))],
       ),
     );
   }

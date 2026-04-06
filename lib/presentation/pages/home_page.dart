@@ -29,7 +29,6 @@ class _HomePageState extends State<HomePage> {
   int _alertasStock = 0;
   double _ingresos = 0.0;
   bool _loading = true;
-  bool _isDark = false;
 
   @override
   void initState() {
@@ -47,25 +46,15 @@ class _HomePageState extends State<HomePage> {
       final sales = await _saleRepo.getTodaySales();
       _ventasHoy = sales.length;
       _ingresos = sales.fold(0.0, (sum, s) => sum + s.total);
-    } catch (e) {
-      print('Error: $e');
-    }
+    } catch (e) { print('Error: $e'); }
     if (mounted) setState(() => _loading = false);
-  }
-
-  void _handleThemeToggle(bool isDark) {
-    setState(() => _isDark = isDark);
-    if (widget.onToggleTheme != null) {
-      widget.onToggleTheme!(isDark);
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    _isDark = Theme.of(context).brightness == Brightness.dark;
     return ResponsiveLayout(
       mobile: _HomeContent(
-        onToggleTheme: _handleThemeToggle,
+        onToggleTheme: widget.onToggleTheme,
         loading: _loading,
         loadStats: _loadStats,
         totalProducts: _totalProducts,
@@ -74,7 +63,7 @@ class _HomePageState extends State<HomePage> {
         ingresos: _ingresos,
       ),
       desktop: _HomeDesktop(
-        onToggleTheme: _handleThemeToggle,
+        onToggleTheme: widget.onToggleTheme,
         loading: _loading,
         loadStats: _loadStats,
         totalProducts: _totalProducts,
@@ -109,7 +98,7 @@ class _HomeContent extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text(AppConstants.appName),
-        centerTitle: true,
+        centerTitle: false, // ✅ TÍTULO A LA IZQUIERDA
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: loadStats),
           IconButton(
@@ -244,6 +233,7 @@ class _HomeDesktop extends StatelessWidget {
             Text(AppConstants.appName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           ],
         ),
+        centerTitle: false, // ✅ TÍTULO A LA IZQUIERDA (forzado)
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: loadStats),
           IconButton(

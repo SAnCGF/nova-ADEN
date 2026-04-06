@@ -9,8 +9,10 @@ class Product {
   final String? categoria;
   final bool esFavorito;
   final int? stockCritico;
-  // RF 51: Margen de ganancia sugerido
   final double? margenGanancia;
+  final String unidadMedida;
+  final bool activo;
+  final String? notas;
 
   Product({
     this.id,
@@ -24,7 +26,12 @@ class Product {
     this.esFavorito = false,
     this.stockCritico,
     this.margenGanancia,
+    this.unidadMedida = 'UND',
+    this.activo = true,
+    this.notas,
   });
+
+  bool get esStockCritico => stockCritico != null && stockActual <= stockCritico!;
 
   Map<String, dynamic> toMap() {
     return {
@@ -39,6 +46,9 @@ class Product {
       'es_favorito': esFavorito ? 1 : 0,
       'stock_critico': stockCritico,
       'margen_ganancia': margenGanancia,
+      'unidad_medida': unidadMedida,
+      'activo': activo ? 1 : 0,
+      'notas': notas,
     };
   }
 
@@ -47,29 +57,17 @@ class Product {
       id: map['id'] as int?,
       nombre: map['nombre'] as String,
       codigo: map['codigo'] as String,
-      costo: (map['costo'] as num?)?.toDouble(),
-      precioVenta: (map['precio_venta'] as num).toDouble(),
+      costo: map['costo'] as double?,
+      precioVenta: map['precio_venta'] as double,
       stockActual: map['stock_actual'] as int,
       stockMinimo: map['stock_minimo'] as int,
       categoria: map['categoria'] as String?,
-      esFavorito: (map['es_favorito'] as int?) == 1,
+      esFavorito: map['es_favorito'] == 1,
       stockCritico: map['stock_critico'] as int?,
-      margenGanancia: (map['margen_ganancia'] as num?)?.toDouble(),
+      margenGanancia: map['margen_ganancia'] as double?,
+      unidadMedida: map['unidad_medida'] as String? ?? 'UND',
+      activo: map['activo'] == 1,
+      notas: map['notas'] as String?,
     );
   }
-
-  // RF 51: Calcular precio sugerido por margen
-  double calcularPrecioSugerido(double margen) {
-    final costoReal = costo ?? 0.0;
-    return costoReal > 0 ? costoReal * (1 + margen / 100) : precioVenta;
-  }
-
-  // RF 51: Obtener margen actual
-  double get margenActual {
-    final costoReal = costo ?? 0.0;
-    if (costoReal <= 0) return 0.0;
-    return ((precioVenta - costoReal) / costoReal) * 100;
-  }
-
-  bool get esStockCritico => stockCritico != null ? stockActual <= stockCritico! : stockActual <= stockMinimo;
 }
