@@ -81,7 +81,7 @@ class _WastePageState extends State<WastePage> {
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             decoration: const InputDecoration(border: OutlineInputBorder()),
-            initialValue: _selectedReason,
+            value: _selectedReason,
             items: ['Dañado', 'Vencido', 'Robo', 'Error', 'Otro'].map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
             onChanged: (v) => setState(() => _selectedReason = v ?? 'Dañado'),
           ),

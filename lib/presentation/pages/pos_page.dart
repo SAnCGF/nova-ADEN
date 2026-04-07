@@ -400,7 +400,7 @@ class _PosPageState extends State<PosPage> {
                                 const DropdownMenuItem(value: null, child: Text('Cliente General')),
                                 ..._customers.map((c) => DropdownMenuItem(value: c, child: Text(c.nombre))),
                               ],
-                              initialValue: _selectedCustomer,
+                              value: _selectedCustomer,
                               onChanged: (v) => setModalState(() => _selectedCustomer = v),
                             ),
                           ],

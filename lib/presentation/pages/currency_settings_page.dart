@@ -53,7 +53,7 @@ class _CurrencySettingsPageState extends State<CurrencySettingsPage> {
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               decoration: const InputDecoration(border: OutlineInputBorder()),
-              initialValue: _currency,
+              value: _currency,
               items: const [
                 DropdownMenuItem(value: 'CUP', child: Text('🇨🇺 Peso Cubano (CUP)')),
                 DropdownMenuItem(value: 'MLC', child: Text('💳 MLC')),

@@ -176,7 +176,7 @@ class _PurchasePageState extends State<PurchasePage> {
                                 contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               ),
                               items: _suppliers.map((s) => DropdownMenuItem(value: s, child: Text(s.nombre))).toList(),
-                              initialValue: _selectedSupplier,
+                              value: _selectedSupplier,
                               onChanged: (v) => setState(() => _selectedSupplier = v),
                             ),
                           ],
