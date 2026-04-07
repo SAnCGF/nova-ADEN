@@ -73,7 +73,7 @@ class _InventoryAdjustmentPageState extends State<InventoryAdjustmentPage> {
           DropdownButtonFormField<Product>(
             decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Seleccionar producto'),
             items: _products.map((p) => DropdownMenuItem(value: p, child: Text('${p.nombre} (Stock: ${p.stockActual})'))).toList(),
-            value: _selectedProduct,
+            initialValue: _selectedProduct,
             onChanged: (v) => setState(() => _selectedProduct = v),
           ),
           const SizedBox(height: 16),
@@ -98,7 +98,7 @@ class _InventoryAdjustmentPageState extends State<InventoryAdjustmentPage> {
           DropdownButtonFormField<String>(
             decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Seleccionar motivo'),
             items: ['Reposición', 'Error de conteo', 'Producto dañado', 'Devolución', 'Otro'].map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
-            value: _reason.isEmpty ? null : _reason,
+            initialValue: _reason.isEmpty ? null : _reason,
             onChanged: (v) => setState(() => _reason = v ?? ''),
           ),
           const SizedBox(height: 16),
@@ -107,7 +107,7 @@ class _InventoryAdjustmentPageState extends State<InventoryAdjustmentPage> {
           if (_selectedProduct != null)
             Card(
               child: Padding(padding: const EdgeInsets.all(16), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('Valor del ajuste:', style: TextStyle(fontSize: 16)),
+                const Text('Valor del ajuste:', style: TextStyle(fontSize: 16)),
                 Text('\$${((_selectedProduct?.costo ?? _selectedProduct!.precioVenta * 0.7) * _quantity).toStringAsFixed(2)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
               ])),
             ),

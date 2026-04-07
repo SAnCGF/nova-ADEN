@@ -53,7 +53,7 @@ class _CurrencySettingsPageState extends State<CurrencySettingsPage> {
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               decoration: const InputDecoration(border: OutlineInputBorder()),
-              value: _currency,
+              initialValue: _currency,
               items: const [
                 DropdownMenuItem(value: 'CUP', child: Text('🇨🇺 Peso Cubano (CUP)')),
                 DropdownMenuItem(value: 'MLC', child: Text('💳 MLC')),
@@ -69,7 +69,7 @@ class _CurrencySettingsPageState extends State<CurrencySettingsPage> {
                 const Text('💳 MLC: 1 MLC = ', style: TextStyle(fontWeight: FontWeight.bold)),
                 Expanded(
                   child: TextField(
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(border: OutlineInputBorder(), hintText: '120.0'),
                     controller: TextEditingController(text: _mlcRate.toString()),
                     onChanged: (v) => _mlcRate = double.tryParse(v) ?? 120.0,
@@ -84,7 +84,7 @@ class _CurrencySettingsPageState extends State<CurrencySettingsPage> {
                 const Text('🇺🇸 USD: 1 USD = ', style: TextStyle(fontWeight: FontWeight.bold)),
                 Expanded(
                   child: TextField(
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(border: OutlineInputBorder(), hintText: '1.0'),
                     controller: TextEditingController(text: _usdRate.toString()),
                     onChanged: (v) => _usdRate = double.tryParse(v) ?? 1.0,

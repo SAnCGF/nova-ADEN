@@ -194,7 +194,7 @@ class _SupplierPageState extends State<SupplierPage> {
                       return Card(
                         margin: const EdgeInsets.only(bottom: 8),
                         child: ListTile(
-                          leading: CircleAvatar(backgroundColor: Colors.brown, child: const Icon(Icons.business, color: Colors.white)),
+                          leading: const CircleAvatar(backgroundColor: Colors.brown, child: Icon(Icons.business, color: Colors.white)),
                           title: Text(s.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,

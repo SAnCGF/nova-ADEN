@@ -196,7 +196,7 @@ class _InventoryAdjustmentsPageState extends State<InventoryAdjustmentsPage> {
                           leading: CircleAvatar(
                             backgroundColor:
                                 p.stockActual > 0 ? Colors.blue : Colors.grey,
-                            child: Icon(Icons.inventory_2, color: Colors.white),
+                            child: const Icon(Icons.inventory_2, color: Colors.white),
                           ),
                           title: Text(p.nombre,
                               style: const TextStyle(
@@ -295,9 +295,9 @@ class _InventoryAdjustmentsPageState extends State<InventoryAdjustmentsPage> {
                               child: ElevatedButton.icon(
                                 onPressed: _applyAdjustments,
                                 icon: const Icon(Icons.check_circle),
-                                label: Text(
+                                label: const Text(
                                   'APLICAR AJUSTES',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       fontSize: 16, fontWeight: FontWeight.bold),
                                 ),
                                 style: ElevatedButton.styleFrom(

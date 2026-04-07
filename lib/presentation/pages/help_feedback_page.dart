@@ -38,7 +38,7 @@ class _HelpFeedbackPageState extends State<HelpFeedbackPage> {
             TextField(
               controller: _feedbackCtrl,
               maxLines: 5,
-              decoration: InputDecoration(hintText: 'Escribe tu sugerencia o reporte...', border: OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]),
+              decoration: InputDecoration(hintText: 'Escribe tu sugerencia o reporte...', border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]),
             ),
             const SizedBox(height: 16),
             SizedBox(

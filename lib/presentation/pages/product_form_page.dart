@@ -137,7 +137,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
                 Expanded(
                   child: TextFormField(
                     controller: _costoController,
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(labelText: 'Costo', border: OutlineInputBorder()),
                   ),
                 ),
@@ -145,7 +145,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
                 Expanded(
                   child: TextFormField(
                     controller: _precioController,
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(labelText: 'Precio Venta *', border: OutlineInputBorder()),
                     validator: (v) => v!.isEmpty ? 'Requerido' : null,
                   ),

@@ -71,7 +71,7 @@ class _CustomerPageState extends State<CustomerPage> {
           itemBuilder: (ctx, i) {
             final c = _customers[i];
             return Card(margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), child: ListTile(
-              leading: CircleAvatar(backgroundColor: Colors.blue, child: Icon(Icons.person, color: Colors.white)),
+              leading: const CircleAvatar(backgroundColor: Colors.blue, child: Icon(Icons.person, color: Colors.white)),
               title: Text(c.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
               subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('CI: ${c.carnetIdentidad}'), Text('📞 ${c.telefono}')]),
             ));

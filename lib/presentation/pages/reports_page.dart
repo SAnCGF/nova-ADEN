@@ -6,7 +6,6 @@ import '../../core/database/database_helper.dart';
 import '../../core/repositories/product_repository.dart';
 import '../../core/repositories/sale_repository.dart';
 import '../../core/models/product.dart';
-import 'package:sqflite/sqflite.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
@@ -129,7 +128,7 @@ class _ReportsPageState extends State<ReportsPage> {
                 ],
               ),
             ),
-            Icon(Icons.download, color: Colors.blue),
+            const Icon(Icons.download, color: Colors.blue),
           ],
         ),
       ),
@@ -140,8 +139,7 @@ class _ReportsPageState extends State<ReportsPage> {
     try {
       final products = await _productRepo.getAllProducts();
       final header = '${AppConstants.appName} - Catálogo de Productos\nFecha: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}\n\n';
-      final csvContent = header + 'ID,Nombre,Código,Costo,Precio Venta,Stock,Categoría\n' +
-          products.map((p) => '${p.id},"${p.nombre}","${p.codigo}",${p.costo},${p.precioVenta},${p.stockActual},"${p.categoria ?? ''}"').join('\n');
+      final csvContent = '${header}ID,Nombre,Código,Costo,Precio Venta,Stock,Categoría\n${products.map((p) => '${p.id},"${p.nombre}","${p.codigo}",${p.costo},${p.precioVenta},${p.stockActual},"${p.categoria ?? ''}"').join('\n')}';
       
       final directory = await getApplicationDocumentsDirectory();
       final filePath = '${directory.path}/productos_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.csv';
@@ -150,7 +148,7 @@ class _ReportsPageState extends State<ReportsPage> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('✅ Exportado: productos.csv'), backgroundColor: Colors.green),
+          const SnackBar(content: Text('✅ Exportado: productos.csv'), backgroundColor: Colors.green),
         );
       }
     } catch (e) {
@@ -166,8 +164,7 @@ class _ReportsPageState extends State<ReportsPage> {
     try {
       final sales = await _saleRepo.getTodaySales();
       final header = '${AppConstants.appName} - Ventas del Día\nFecha: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}\n\n';
-      final csvContent = header + 'ID,Fecha,Total,Cliente,Monto Pagado,Monto Pendiente\n' +
-          sales.map((s) => '${s.id},${s.fecha},${s.total},"${s.clienteId ?? 'General'}",${s.montoPagado},${s.montoPendiente}').join('\n');
+      final csvContent = '${header}ID,Fecha,Total,Cliente,Monto Pagado,Monto Pendiente\n${sales.map((s) => '${s.id},${s.fecha},${s.total},"${s.clienteId ?? 'General'}",${s.montoPagado},${s.montoPendiente}').join('\n')}';
       
       final directory = await getApplicationDocumentsDirectory();
       final filePath = '${directory.path}/ventas_${DateFormat('yyyyMMdd').format(DateTime.now())}.csv';
@@ -176,7 +173,7 @@ class _ReportsPageState extends State<ReportsPage> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('✅ Exportado: ventas_hoy.csv'), backgroundColor: Colors.green),
+          const SnackBar(content: Text('✅ Exportado: ventas_hoy.csv'), backgroundColor: Colors.green),
         );
       }
     } catch (e) {
@@ -192,8 +189,7 @@ class _ReportsPageState extends State<ReportsPage> {
     try {
       final top10 = await _saleRepo.getTop10Products();
       final header = '${AppConstants.appName} - Top 10 Productos Más Vendidos\nFecha: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}\n\n';
-      final csvContent = header + 'Producto,ID,Total Vendido\n' +
-          top10.map((p) => '"${p['nombre']}",${p['id']},${p['total_vendido']}').join('\n');
+      final csvContent = '${header}Producto,ID,Total Vendido\n${top10.map((p) => '"${p['nombre']}",${p['id']},${p['total_vendido']}').join('\n')}';
       
       final directory = await getApplicationDocumentsDirectory();
       final filePath = '${directory.path}/top10_productos_${DateFormat('yyyyMMdd').format(DateTime.now())}.csv';
@@ -202,7 +198,7 @@ class _ReportsPageState extends State<ReportsPage> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('✅ Exportado: top10_productos.csv'), backgroundColor: Colors.green),
+          const SnackBar(content: Text('✅ Exportado: top10_productos.csv'), backgroundColor: Colors.green),
         );
       }
     } catch (e) {
@@ -257,7 +253,7 @@ class _ReportsPageState extends State<ReportsPage> {
                               topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                               rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                             ),
-                            gridData: FlGridData(show: false),
+                            gridData: const FlGridData(show: false),
                             borderData: FlBorderData(show: false),
                             barGroups: data.asMap().entries.map((entry) {
                               return BarChartGroupData(
@@ -822,11 +818,11 @@ class _ReportsPageState extends State<ReportsPage> {
                                   child: Icon(_getMovementIcon(m['tipo']), color: Colors.white, size: 20),
                                 ),
                                 title: Text(
-                                  '${(m['tipo'] as String?)?.toUpperCase() ?? 'MOVIMIENTO'}',
+                                  (m['tipo'] as String?)?.toUpperCase() ?? 'MOVIMIENTO',
                                   style: TextStyle(fontWeight: FontWeight.bold, color: color),
                                 ),
                                 subtitle: Text(
-                                  '${m['fecha']?.toString().split('T')[0] ?? 'Fecha desconocida'}',
+                                  m['fecha']?.toString().split('T')[0] ?? 'Fecha desconocida',
                                   style: const TextStyle(fontSize: 12),
                                 ),
                                 trailing: Column(

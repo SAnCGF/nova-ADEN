@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
 import 'dart:convert';
 import '../../core/models/product.dart';
 import '../../core/models/customer.dart';
@@ -202,23 +201,23 @@ class _PosPageState extends State<PosPage> {
                   for (var i = 1; i <= 9; i++)
                     ElevatedButton(
                       onPressed: () => setModalState(() => tempAmount = double.parse('${(tempAmount * 100).toInt()}$i') / 100),
-                      child: Text('$i', style: const TextStyle(fontSize: 24, color: Colors.black)),
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black, elevation: 2),
+                      child: Text('$i', style: const TextStyle(fontSize: 24, color: Colors.black)),
                     ),
                   ElevatedButton(
                     onPressed: () => setModalState(() => tempAmount = 0),
-                    child: const Text('C', style: TextStyle(fontSize: 24, color: Colors.red, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.red[100]),
+                    child: const Text('C', style: TextStyle(fontSize: 24, color: Colors.red, fontWeight: FontWeight.bold)),
                   ),
                   ElevatedButton(
                     onPressed: () => setModalState(() => tempAmount = double.parse('${(tempAmount * 100).toInt()}0') / 100),
-                    child: const Text('0', style: TextStyle(fontSize: 24, color: Colors.black)),
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black, elevation: 2),
+                    child: const Text('0', style: TextStyle(fontSize: 24, color: Colors.black)),
                   ),
                   ElevatedButton(
                     onPressed: () => setModalState(() { if (tempAmount > 0) tempAmount = (tempAmount * 100).toInt() ~/ 10 / 100; }),
-                    child: const Icon(Icons.backspace, size: 24, color: Colors.orange),
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.orange[100]),
+                    child: const Icon(Icons.backspace, size: 24, color: Colors.orange),
                   ),
                 ],
               ),
@@ -234,8 +233,8 @@ class _PosPageState extends State<PosPage> {
                     });
                     Navigator.pop(ctx);
                   },
-                  child: const Text('LISTO', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                  child: const Text('LISTO', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ),
             ],
@@ -269,7 +268,7 @@ class _PosPageState extends State<PosPage> {
         await PdfGenerator.generateSaleTicket(createdSale, finalLines);
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('✅ Venta registrada satisfactoriamente'), backgroundColor: Colors.green, duration: const Duration(seconds: 2)));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Venta registrada satisfactoriamente'), backgroundColor: Colors.green, duration: Duration(seconds: 2)));
 
       if (widget.onSaleCompleted != null) widget.onSaleCompleted!();
       _clearCart();
@@ -401,7 +400,7 @@ class _PosPageState extends State<PosPage> {
                                 const DropdownMenuItem(value: null, child: Text('Cliente General')),
                                 ..._customers.map((c) => DropdownMenuItem(value: c, child: Text(c.nombre))),
                               ],
-                              value: _selectedCustomer,
+                              initialValue: _selectedCustomer,
                               onChanged: (v) => setModalState(() => _selectedCustomer = v),
                             ),
                           ],
@@ -491,7 +490,7 @@ class _PosPageState extends State<PosPage> {
                       ),
                       Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(color: Colors.grey[100], boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4, offset: const Offset(0, -2))]),
+                        decoration: BoxDecoration(color: Colors.grey[100], boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, -2))]),
                         child: Column(
                           children: [
                             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -520,18 +519,18 @@ class _PosPageState extends State<PosPage> {
                               if (_amountPaidForeign < _total)
                                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                                   const Text('⚠️ Faltante:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
-                                  Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${(_total - _amountPaidForeign).toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
+                                  Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${(_total - _amountPaidForeign).toStringAsFixed(2)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
                                 ])
                               else if (_amountPaidForeign >= _total)
                                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                                   const Text('🔄 CAMBIO:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
-                                  Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_change.toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue)),
+                                  Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_change.toStringAsFixed(2)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue)),
                                 ]),
                             ],
                             if (_isCredit && _amountPaidForeign > 0)
                               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                                 const Text('⚠️ Pendiente:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
-                                Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_pending.toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
+                                Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_pending.toStringAsFixed(2)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
                               ]),
                             const SizedBox(height: 16),
                             SizedBox(
@@ -621,7 +620,7 @@ class _PosPageState extends State<PosPage> {
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         child: ListTile(
-                          leading: CircleAvatar(backgroundColor: p.stockActual > 0 ? Colors.blue : Colors.grey, child: Icon(Icons.inventory_2, color: Colors.white)),
+                          leading: CircleAvatar(backgroundColor: p.stockActual > 0 ? Colors.blue : Colors.grey, child: const Icon(Icons.inventory_2, color: Colors.white)),
                           title: Text(p.nombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -642,9 +641,9 @@ class _PosPageState extends State<PosPage> {
                 if (_cart.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: Colors.white,
-                      boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: const Offset(0, -2))],
+                      boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, -2))],
                     ),
                     child: Row(
                       children: [

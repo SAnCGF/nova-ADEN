@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
 import 'dart:convert';
 import '../../core/database/database_helper.dart';
-import 'pos_page.dart';
 
 class PausedSalesPage extends StatefulWidget {
   const PausedSalesPage({super.key});
@@ -57,7 +55,7 @@ class _PausedSalesPageState extends State<PausedSalesPage> {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
-                    leading: CircleAvatar(backgroundColor: Colors.orange, child: const Icon(Icons.pause, color: Colors.white)),
+                    leading: const CircleAvatar(backgroundColor: Colors.orange, child: Icon(Icons.pause, color: Colors.white)),
                     title: Text(sale['nombre'], style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

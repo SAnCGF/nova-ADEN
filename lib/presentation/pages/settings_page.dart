@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'currency_settings_page.dart';
 import 'backup_page.dart';
-import 'notes_page.dart';
 
 class SettingsPage extends StatefulWidget {
   final Function(bool)? onToggleTheme;
@@ -224,17 +223,17 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Nova ADEN'),
-        content: Column(
+        content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Versión: 1.0.0'),
-            const SizedBox(height: 8),
-            const Text('Administrador de Negocio'),
-            const SizedBox(height: 8),
-            const Text('Desarrollado con Flutter & Dart'),
-            const SizedBox(height: 16),
-            const Text('© 2026 Todos los derechos reservados.'),
+            Text('Versión: 1.0.0'),
+            SizedBox(height: 8),
+            Text('Administrador de Negocio'),
+            SizedBox(height: 8),
+            Text('Desarrollado con Flutter & Dart'),
+            SizedBox(height: 16),
+            Text('© 2026 Todos los derechos reservados.'),
           ],
         ),
         actions: [

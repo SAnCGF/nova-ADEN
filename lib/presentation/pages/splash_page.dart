@@ -85,11 +85,11 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(30),
-                                boxShadow: [
+                                boxShadow: const [
                                   BoxShadow(
                                     color: Colors.black26,
                                     blurRadius: 20,
-                                    offset: const Offset(0, 10),
+                                    offset: Offset(0, 10),
                                   ),
                                 ],
                               ),

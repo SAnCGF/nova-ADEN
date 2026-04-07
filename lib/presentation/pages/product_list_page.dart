@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../../core/models/product.dart';
 import '../../core/repositories/product_repository.dart';
 import '../../core/utils/pdf_generator.dart';
-import 'inventory_adjustments_page.dart';
-import 'bulk_price_page.dart';
 
 class ProductListPage extends StatefulWidget {
   final VoidCallback? onStatsChanged;
@@ -426,7 +424,7 @@ class _ProductListPageState extends State<ProductListPage> {
                             return Card(
                               margin: const EdgeInsets.only(bottom: 8),
                               child: ListTile(
-                                leading: CircleAvatar(backgroundColor: p.activo ? (p.stockActual > 0 ? Colors.blue : Colors.grey) : Colors.grey[400], child: Icon(Icons.inventory_2, color: Colors.white)),
+                                leading: CircleAvatar(backgroundColor: p.activo ? (p.stockActual > 0 ? Colors.blue : Colors.grey) : Colors.grey[400], child: const Icon(Icons.inventory_2, color: Colors.white)),
                                 title: Text(p.nombre, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
                                 subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                   Text('Código: ${p.codigo}', style: TextStyle(color: isDark ? Colors.white60 : Colors.black54)),

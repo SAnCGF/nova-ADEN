@@ -124,9 +124,9 @@ class _BackupPageState extends State<BackupPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            const Text('Respaldos Automáticos', style: TextStyle(fontWeight: FontWeight.bold)),
-                            const Text('Diario a las 23:59', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                          const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text('Respaldos Automáticos', style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text('Diario a las 23:59', style: TextStyle(color: Colors.grey, fontSize: 12)),
                           ]),
                           Switch(value: _autoBackup, onChanged: (v) => setState(() => _autoBackup = v)),
                         ],

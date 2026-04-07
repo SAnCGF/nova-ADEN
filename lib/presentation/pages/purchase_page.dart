@@ -176,7 +176,7 @@ class _PurchasePageState extends State<PurchasePage> {
                                 contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               ),
                               items: _suppliers.map((s) => DropdownMenuItem(value: s, child: Text(s.nombre))).toList(),
-                              value: _selectedSupplier,
+                              initialValue: _selectedSupplier,
                               onChanged: (v) => setState(() => _selectedSupplier = v),
                             ),
                           ],
@@ -218,7 +218,7 @@ class _PurchasePageState extends State<PurchasePage> {
                       return Card(
                         margin: const EdgeInsets.only(bottom: 8),
                         child: ListTile(
-                          leading: CircleAvatar(backgroundColor: Colors.blue, child: Icon(Icons.inventory_2, color: Colors.white)),
+                          leading: const CircleAvatar(backgroundColor: Colors.blue, child: Icon(Icons.inventory_2, color: Colors.white)),
                           title: Text(p.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -243,14 +243,14 @@ class _PurchasePageState extends State<PurchasePage> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.grey[200],
-                      boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4, offset: const Offset(0, -2))],
+                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, -2))],
                     ),
                     child: Column(
                       children: [
                         const Text('Productos a Comprar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         const SizedBox(height: 8),
                         ConstrainedBox(
-                          constraints: BoxConstraints(maxHeight: 150),
+                          constraints: const BoxConstraints(maxHeight: 150),
                           child: ListView.builder(
                             shrinkWrap: true,
                             itemCount: _cart.length,

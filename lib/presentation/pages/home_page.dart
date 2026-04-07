@@ -225,12 +225,12 @@ class _HomeDesktop extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
-        title: Row(
+        title: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.shopping_bag, size: 32),
-            const SizedBox(width: 12),
-            Text(AppConstants.appName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Icon(Icons.shopping_bag, size: 32),
+            SizedBox(width: 12),
+            Text(AppConstants.appName, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           ],
         ),
         centerTitle: false, // ✅ TÍTULO A LA IZQUIERDA (forzado)
