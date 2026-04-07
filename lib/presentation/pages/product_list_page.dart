@@ -5,15 +5,11 @@ import '../../core/models/product.dart';
 import '../../core/repositories/product_repository.dart';
 import '../../core/utils/csv_exporter.dart';
 import 'package:file_picker/file_picker.dart';
-import 'purchase_list_page.dart';
-import 'waste_page.dart';
-import 'supplier_page.dart';
-import 'reports_page.dart';
-import 'pos_page.dart';
 
 class ProductListPage extends StatefulWidget {
   final VoidCallback? onStatsChanged;
   const ProductListPage({super.key, this.onStatsChanged});
+
   @override
   State<ProductListPage> createState() => _ProductListPageState();
 }
@@ -26,7 +22,10 @@ class _ProductListPageState extends State<ProductListPage> {
   bool _showInactive = false;
 
   @override
-  void initState() { super.initState(); _load(); }
+  void initState() {
+    super.initState();
+    _load();
+  }
 
   Future<void> _load() async {
     setState(() => _loading = true);
@@ -35,7 +34,6 @@ class _ProductListPageState extends State<ProductListPage> {
     if (widget.onStatsChanged != null) widget.onStatsChanged!();
   }
 
-  // --- FUNCIONES DE GESTIÓN DE PRODUCTOS ---
   Future<void> _deleteProduct(int id) async {
     bool? confirm = await showDialog<bool>(
       context: context,
@@ -65,6 +63,18 @@ class _ProductListPageState extends State<ProductListPage> {
     await _repo.updateProduct(p.id!, updated);
     _load();
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(p.activo ? '✅ Archivado' : '✅ Reactivado')));
+  }
+
+  // ✅ FUNCIÓN CORREGIDA Y AGREGADA AQUÍ
+  Future<void> _toggleFavorite(Product p) async {
+    final updated = Product(
+      id: p.id, nombre: p.nombre, codigo: p.codigo, costo: p.costo, precioVenta: p.precioVenta,
+      stockActual: p.stockActual, stockMinimo: p.stockMinimo, categoria: p.categoria,
+      esFavorito: !p.esFavorito, stockCritico: p.stockCritico, margenGanancia: p.margenGanancia,
+      unidadMedida: p.unidadMedida, activo: p.activo, notas: p.notas,
+    );
+    await _repo.updateProduct(p.id!, updated);
+    _load();
   }
 
   Future<void> _duplicateProduct(Product p) async {
@@ -117,7 +127,6 @@ class _ProductListPageState extends State<ProductListPage> {
     }
   }
 
-  // --- FORMULARIO DE PRODUCTO (CON SUGERENCIA DE PRECIO) ---
   void _showProductForm({Product? product}) {
     final nombreCtrl = TextEditingController(text: product?.nombre ?? '');
     final codigoCtrl = TextEditingController(text: product?.codigo ?? '');
@@ -150,7 +159,6 @@ class _ProductListPageState extends State<ProductListPage> {
                   TextField(controller: categoriaCtrl, decoration: InputDecoration(labelText: 'Categoría', border: const OutlineInputBorder(), filled: true, fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100])),
                   const SizedBox(height: 12),
                   
-                  // SUGERENCIA DE PRECIO POR MARGEN
                   Card(
                     color: Theme.of(context).brightness == Brightness.dark ? Colors.blue[900]?.withOpacity(0.3) : Colors.blue[50],
                     child: Padding(
@@ -166,8 +174,9 @@ class _ProductListPageState extends State<ProductListPage> {
                               onPressed: () {
                                 final cost = double.tryParse(costoCtrl.text) ?? 0;
                                 if (cost > 0) {
-                                  final suggested = cost * 1.30; // Margen del 30%
-                                  precioCtrl.text =(suggested.toStringAsFixed(2));
+                                  final suggested = cost * 1.30; 
+                                  // ✅ CORRECCIÓN: .text = en lugar de .setText()
+                                  precioCtrl.text = suggested.toStringAsFixed(2);
                                   setModalState(() {});
                                 }
                               },
@@ -299,7 +308,7 @@ class _ProductListPageState extends State<ProductListPage> {
                       case 'edit': _showProductForm(product: p); break;
                       case 'duplicate': _duplicateProduct(p); break;
                       case 'active': _toggleActive(p); break;
-                      case 'favorite': _toggleFavorite(p); break;
+                      case 'favorite': _toggleFavorite(p); break; // ✅ Ahora existe esta función
                       case 'delete': _deleteProduct(p.id!); break;
                     }
                   },
@@ -313,5 +322,8 @@ class _ProductListPageState extends State<ProductListPage> {
   }
 
   @override
-  void dispose() { _search.dispose(); super.dispose(); }
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
 }
