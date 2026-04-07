@@ -2,21 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/database/database_helper.dart';
-import '../../core/models/customer.dart';
-import '../../core/models/product.dart';
-import '../../core/repositories/customer_repository.dart';
-import '../../core/repositories/product_repository.dart';
+import '../../core/models/supplier.dart';
 
-class SalesListPage extends StatefulWidget {
-  const SalesListPage({super.key});
+class PurchaseListPage extends StatefulWidget {
+  const PurchaseListPage({super.key});
 
   @override
-  State<SalesListPage> createState() => _SalesListPageState();
+  State<PurchaseListPage> createState() => _PurchaseListPageState();
 }
 
-class _SalesListPageState extends State<SalesListPage> {
-  List<Map<String, dynamic>> _sales = [];
-  List<Customer> _customers = [];
+class _PurchaseListPageState extends State<PurchaseListPage> {
+  List<Map<String, dynamic>> _purchases = [];
   bool _isLoading = true;
   DateTimeRange? _selectedRange;
   int _lockDays = 30;
@@ -30,13 +26,12 @@ class _SalesListPageState extends State<SalesListPage> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    await _loadSales();
-    await _loadCustomers();
+    await _loadPurchases();
     await _loadLockSettings();
     setState(() => _isLoading = false);
   }
 
-  Future<void> _loadSales() async {
+  Future<void> _loadPurchases() async {
     final db = await DatabaseHelper.instance.database;
     
     if (_selectedRange == null) {
@@ -46,23 +41,18 @@ class _SalesListPageState extends State<SalesListPage> {
       );
     }
 
-    final sales = await db.rawQuery('''
-      SELECT v.*, c.nombre as cliente_nombre
-      FROM ventas v
-      LEFT JOIN clientes c ON v.cliente_id = c.id
-      WHERE v.fecha >= ? AND v.fecha <= ?
-      ORDER BY v.fecha DESC
+    final purchases = await db.rawQuery('''
+      SELECT p.*, s.nombre as proveedor_nombre
+      FROM compras p
+      LEFT JOIN proveedores s ON p.proveedor_id = s.id
+      WHERE p.fecha >= ? AND p.fecha <= ?
+      ORDER BY p.fecha DESC
     ''', [
       _selectedRange!.start.toIso8601String(),
       _selectedRange!.end.toIso8601String(),
     ]);
 
-    setState(() => _sales = sales);
-  }
-
-  Future<void> _loadCustomers() async {
-    final repo = CustomerRepository();
-    _customers = await repo.getAllCustomers();
+    setState(() => _purchases = purchases);
   }
 
   Future<void> _loadLockSettings() async {
@@ -72,18 +62,18 @@ class _SalesListPageState extends State<SalesListPage> {
     });
   }
 
-  bool _canEdit(DateTime ventaDate) {
+  bool _canEdit(DateTime compraDate) {
     final today = DateTime.now();
-    final daysSinceSale = today.difference(ventaDate).inDays;
-    return daysSinceSale < _lockDays;
+    final daysSincePurchase = today.difference(compraDate).inDays;
+    return daysSincePurchase < _lockDays;
   }
 
-  Future<void> _deleteSale(int saleId) async {
+  Future<void> _deletePurchase(int purchaseId) async {
     final canDelete = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Eliminar Venta'),
-        content: const Text('¿Está seguro que desea eliminar esta venta?'),
+        title: const Text('Eliminar Compra'),
+        content: const Text('¿Está seguro que desea eliminar esta compra?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
           ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Eliminar')),
@@ -94,55 +84,54 @@ class _SalesListPageState extends State<SalesListPage> {
     if (canDelete != true) return;
 
     final db = await DatabaseHelper.instance.database;
-    await db.delete('ventas', where: 'id = ?', whereArgs: [saleId]);
-    await db.delete('venta_detalles', where: 'venta_id = ?', whereArgs: [saleId]);
+    await db.delete('compras', where: 'id = ?', whereArgs: [purchaseId]);
+    await db.delete('compra_detalles', where: 'compra_id = ?', whereArgs: [purchaseId]);
     
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Venta eliminada')));
-    _loadSales();
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Compra eliminada')));
+    _loadPurchases();
   }
 
-  Future<void> _viewDetails(int saleId) async {
+  Future<void> _viewDetails(int purchaseId) async {
     final db = await DatabaseHelper.instance.database;
-    final results = await db.rawQuery('SELECT * FROM ventas WHERE id = ?', [saleId]);
+    final results = await db.rawQuery('SELECT * FROM compras WHERE id = ?', [purchaseId]);
     if (results.isEmpty || !mounted) return;
     
-    final Map<String, dynamic> sale = results.first;
-    final lines = await db.rawQuery('''
-      SELECT vd.*, p.nombre as producto
-      FROM venta_detalles vd
-      JOIN productos p ON vd.producto_id = p.id
-      WHERE vd.venta_id = ?
-    ''', [saleId]);
+    final Map<String, dynamic> purchase = results.first;
+    final details = await db.rawQuery('''
+      SELECT pd.*, pr.nombre as producto
+      FROM compra_detalles pd
+      JOIN productos pr ON pd.producto_id = pr.id
+      WHERE pd.compra_id = ?
+    ''', [purchaseId]);
 
-    final date = DateTime.parse(sale['fecha'] as String);
+    final date = DateTime.parse(purchase['fecha'] as String);
     final canEdit = _canEdit(date);
 
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('Venta #${sale['id']}'),
+        title: Text('Compra #${purchase['id']}'),
         content: SizedBox(
           width: double.maxFinite,
           height: 400,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _detailRow('Cliente:', sale['cliente_id'] != null ? sale['cliente_id'].toString() : 'General'),
+              _detailRow('Proveedor:', purchase['proveedor_id'] != null ? purchase['proveedor_id'].toString() : 'Compra Rápida'),
               _detailRow('Fecha:', DateFormat('dd/MM/yyyy HH:mm').format(date)),
-              _detailRow('Moneda:', sale['moneda']?.toString() ?? 'CUP'),
               const Divider(),
               const Text('📦 Productos:', style: TextStyle(fontWeight: FontWeight.bold)),
-              ...lines.map((line) => Padding(
+              ...details.map((d) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Row(children: [
-                  Expanded(child: Text('${line['cantidad']} x ${line['producto']}')),
-                  Text('\$${(line['subtotal'] as num).toStringAsFixed(2)}'),
+                  Expanded(child: Text('${d['cantidad']} x ${d['producto']}')),
+                  Text('\$${(d['subtotal'] as num).toStringAsFixed(2)}'),
                 ]),
               )),
               const Divider(),
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 const Text('Total:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                Text('\$${(sale['total'] as num).toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
+                Text('\$${(purchase['total'] as num).toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
               ]),
             ],
           ),
@@ -170,7 +159,7 @@ class _SalesListPageState extends State<SalesListPage> {
                   const Icon(Icons.lock_outline, color: Colors.orange, size: 20),
                   const SizedBox(width: 8),
                   Text(
-                    'La venta tiene más de $_lockDays días y está bloqueada para edición',
+                    'La compra tiene más de $_lockDays días y está bloqueada para edición',
                     style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
                   ),
                 ]),
@@ -195,19 +184,19 @@ class _SalesListPageState extends State<SalesListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _sales.where((sale) {
-      final clienteName = (sale['cliente_nombre'] as String?)?.toLowerCase() ?? '';
+    final filtered = _purchases.where((purchase) {
+      final provName = (purchase['proveedor_nombre'] as String?)?.toLowerCase() ?? '';
       final searchLower = _searchCtrl.text.toLowerCase();
-      final totalStr = (sale['total'] as num).toString();
-      return clienteName.contains(searchLower) || totalStr.contains(searchLower);
+      final totalStr = (purchase['total'] as num).toString();
+      return provName.contains(searchLower) || totalStr.contains(searchLower);
     }).toList();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ventas del Día'),
+        title: const Text('Historial de Compras'),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadSales),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadPurchases),
         ],
       ),
       body: _isLoading ? const Center(child: CircularProgressIndicator()) : Column(
@@ -216,38 +205,38 @@ class _SalesListPageState extends State<SalesListPage> {
             padding: const EdgeInsets.all(16),
             child: TextField(
               controller: _searchCtrl,
-              decoration: InputDecoration(hintText: 'Buscar por cliente o monto...', prefixIcon: const Icon(Icons.search), border: const OutlineInputBorder()),
+              decoration: InputDecoration(hintText: 'Buscar por proveedor o monto...', prefixIcon: const Icon(Icons.search), border: const OutlineInputBorder()),
               onChanged: (v) => setState(() {}),
             ),
           ),
           Expanded(
             child: filtered.isEmpty
-                ? const Center(child: Text('No hay ventas en el rango seleccionado'))
+                ? const Center(child: Text('No hay compras en el rango seleccionado'))
                 : ListView.builder(
                     itemCount: filtered.length,
                     itemBuilder: (ctx, i) {
-                      final s = filtered[i];
-                      final date = DateTime.parse(s['fecha'] as String);
+                      final p = filtered[i];
+                      final date = DateTime.parse(p['fecha'] as String);
                       final canEdit = _canEdit(date);
                       
                       return Card(
                         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: canEdit ? Colors.teal : Colors.orange,
+                            backgroundColor: canEdit ? Colors.blue : Colors.orange,
                             child: Icon(canEdit ? Icons.receipt_long : Icons.lock, color: Colors.white),
                           ),
-                          title: Text('Venta #${s['id']}'),
-                          subtitle: Text(DateFormat('dd/MM/yyyy HH:mm').format(date)),
+                          title: Text('Compra #${p['id']}'),
+                          subtitle: Text(DateFormat('dd/MM/yyyy').format(date)),
                           trailing: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text('\$${(s['total'] as num).toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                              Text(s['moneda']?.toString() ?? 'CUP', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                              Text('\$${(p['total'] as num).toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Text(p['proveedor_nombre'] != null ? 'Proveedor' : 'Rápida', style: TextStyle(fontSize: 12, color: Colors.grey)),
                             ],
                           ),
-                          onTap: () => _viewDetails(s['id'] as int),
+                          onTap: () => _viewDetails(p['id'] as int),
                         ),
                       );
                     },

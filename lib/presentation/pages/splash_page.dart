@@ -39,7 +39,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => HomePage(onToggleTheme: widget.onToggleTheme)),
+          MaterialPageRoute(builder: (_) => HomePage()),
         );
       }
     });

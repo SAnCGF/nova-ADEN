@@ -1,156 +1,130 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../core/models/supplier.dart';
 import '../../core/repositories/supplier_repository.dart';
+import '../../core/database/database_helper.dart';
 
 class SupplierPage extends StatefulWidget {
   const SupplierPage({super.key});
-
   @override
   State<SupplierPage> createState() => _SupplierPageState();
 }
 
-class _SupplierPageState extends State<SupplierPage> {
-  final _repo = SupplierRepository();
+class _SupplierPageState extends State<SupplierPage> with SingleTickerProviderStateMixin {
+  final _supplierRepo = SupplierRepository();
   List<Supplier> _suppliers = [];
-  bool _loading = true;
-  final _search = TextEditingController();
+  bool _isLoading = true;
+  late TabController _tabController;
+  final _searchCtrl = TextEditingController();
+
+  // Formulario
+  final _nombreCtrl = TextEditingController();
+  final _contactoCtrl = TextEditingController();
+  final _telefonoCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _tabController = TabController(length: 2, vsync: this);
+    _loadData();
   }
 
-  Future<void> _load() async {
-    setState(() => _loading = true);
-    _suppliers = await _repo.getAllSuppliers();
-    setState(() => _loading = false);
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _searchCtrl.dispose();
+    _nombreCtrl.dispose();
+    _contactoCtrl.dispose();
+    _telefonoCtrl.dispose();
+    super.dispose();
   }
 
-  Future<void> _deleteSupplier(int id) async {
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    _suppliers = await _supplierRepo.getAllSuppliers();
+    setState(() => _isLoading = false);
+  }
+
+  Future<void> _saveSupplier() async {
+    if (_nombreCtrl.text.isEmpty || _telefonoCtrl.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Complete campos obligatorios')));
+      return;
+    }
     try {
-      await _repo.deleteSupplier(id);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Proveedor eliminado'), backgroundColor: Colors.green),
-        );
-        _load();
-      }
+      final supplier = Supplier(
+        nombre: _nombreCtrl.text.trim(),
+        contacto: _contactoCtrl.text.trim(),
+        telefono: _telefonoCtrl.text.trim(),
+      );
+      await _supplierRepo.createSupplier(supplier);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Proveedor registrado'), backgroundColor: Colors.green));
+      _nombreCtrl.clear();
+      _contactoCtrl.clear();
+      _telefonoCtrl.clear();
+      _loadData();
+      _tabController.animateTo(0);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ $e')));
     }
   }
 
-  void _showSupplierForm({Supplier? supplier}) {
-    final nombreCtrl = TextEditingController(text: supplier?.nombre ?? '');
-    final carnetCtrl = TextEditingController(text: supplier?.contacto ?? '');
-    final telefonoCtrl = TextEditingController(text: supplier?.telefono ?? '');
+  // RF 49: Ver histórico por proveedor
+  Future<void> _showSupplierHistory(Supplier supplier) async {
+    final db = await DatabaseHelper.instance.database;
+    final purchases = await db.rawQuery('''
+      SELECT c.id, c.fecha, c.total
+      FROM compras c
+      WHERE c.proveedor_id = ?
+      ORDER BY c.fecha DESC
+    ''', [supplier.id]);
 
-    showModalBottomSheet(
+    if (!mounted) return;
+
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (context, scrollCtrl) => SingleChildScrollView(
-          controller: scrollCtrl,
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    supplier == null ? '➕ Nuevo Proveedor' : '✏️ Editar Proveedor',
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              const Divider(),
-              TextField(
-                controller: nombreCtrl,
-                decoration: const InputDecoration(labelText: 'Nombre *', border: OutlineInputBorder()),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: carnetCtrl,
-                decoration: const InputDecoration(labelText: 'Carnet de Identidad', border: OutlineInputBorder()),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: telefonoCtrl,
-                decoration: const InputDecoration(labelText: 'Teléfono', border: OutlineInputBorder()),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    if (nombreCtrl.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('⚠️ El nombre es requerido'), backgroundColor: Colors.orange),
-                      );
-                      return;
-                    }
-                    try {
-                      final newSupplier = Supplier(
-                        id: supplier?.id,
-                        nombre: nombreCtrl.text.trim(),
-                        contacto: carnetCtrl.text.trim(),
-                        telefono: telefonoCtrl.text.trim(),
-                      );
-                      if (supplier == null) {
-                        await _repo.createSupplier(newSupplier);
-                      } else {
-                        await _repo.updateSupplier(supplier.id!, newSupplier);
-                      }
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(supplier == null ? '✅ Proveedor creado' : '✅ Proveedor actualizado'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                        Navigator.pop(ctx);
-                        _load();
-                      }
-                    } catch (e) {
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red),
-                        );
-                      }
-                    }
+      builder: (_) => AlertDialog(
+        title: Text('📋 Historial: ${supplier.nombre}'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 400,
+          child: purchases.isEmpty
+              ? const Center(child: Text('Sin compras registradas'))
+              : ListView.builder(
+                  itemCount: purchases.length,
+                  itemBuilder: (ctx, i) {
+                    final p = purchases[i];
+                    return ListTile(
+                      title: Text('Compra #${p['id']}'),
+                      subtitle: Text(DateFormat('dd/MM/yyyy').format(DateTime.parse(p['fecha'] as String))),
+                      trailing: Text('\$${(p['total'] as num).toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    );
                   },
-                  icon: const Icon(Icons.save),
-                  label: Text(
-                    supplier == null ? 'CREAR PROVEEDOR' : 'ACTUALIZAR PROVEEDOR',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                  ),
                 ),
-              ),
-            ],
-          ),
         ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
+        ],
       ),
     );
+  }
+
+  Future<void> _deleteSupplier(Supplier supplier) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar Proveedor'),
+        content: Text('¿Eliminar a ${supplier.nombre}?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Eliminar')),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      await _supplierRepo.deleteSupplier(supplier.id!);
+      _loadData();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Eliminado')));
+    }
   }
 
   @override
@@ -159,70 +133,100 @@ class _SupplierPageState extends State<SupplierPage> {
       appBar: AppBar(
         title: const Text('Proveedores'),
         centerTitle: true,
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
-        ],
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [Tab(text: '📋 Lista'), Tab(text: '➕ Nuevo')],
+        ),
       ),
+      body: _isLoading ? const Center(child: CircularProgressIndicator())
+        : TabBarView(
+            controller: _tabController,
+            children: [_buildListTab(), _buildFormTab()],
+          ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showSupplierForm(),
+        onPressed: () => _tabController.animateTo(1),
         child: const Icon(Icons.add),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: TextField(
-                    controller: _search,
-                    decoration: InputDecoration(
-                      hintText: 'Buscar proveedor...',
-                      prefixIcon: const Icon(Icons.search),
-                      border: const OutlineInputBorder(),
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                    ),
-                    onChanged: (v) => setState(() {}),
-                  ),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _suppliers.where((s) => s.nombre.toLowerCase().contains(_search.text.toLowerCase())).length,
-                    itemBuilder: (ctx, i) {
-                      final s = _suppliers.where((sup) => sup.nombre.toLowerCase().contains(_search.text.toLowerCase())).toList()[i];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          leading: const CircleAvatar(backgroundColor: Colors.brown, child: Icon(Icons.business, color: Colors.white)),
-                          title: Text(s.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (s.contacto != null && s.contacto!.isNotEmpty) Text('👤 ${s.contacto}'),
-                              if (s.telefono != null && s.telefono!.isNotEmpty) Text('📞 ${s.telefono}'),
-                            ],
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(icon: const Icon(Icons.edit), onPressed: () => _showSupplierForm(supplier: s)),
-                              IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deleteSupplier(s.id!)),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
     );
   }
 
-  @override
-  void dispose() {
-    _search.dispose();
-    super.dispose();
+  Widget _buildListTab() {
+    final filtered = _suppliers.where((s) => 
+      s.nombre.toLowerCase().contains(_searchCtrl.text.toLowerCase())
+    ).toList();
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: TextField(
+            controller: _searchCtrl,
+            decoration: InputDecoration(hintText: 'Buscar proveedor...', prefixIcon: const Icon(Icons.search), border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]),
+            onChanged: (v) => setState(() {}),
+          ),
+        ),
+        Expanded(
+          child: filtered.isEmpty
+              ? const Center(child: Text('No hay proveedores'))
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: filtered.length,
+                  itemBuilder: (ctx, i) {
+                    final s = filtered[i];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        leading: const CircleAvatar(backgroundColor: Colors.blue, child: Icon(Icons.store, color: Colors.white)),
+                        title: Text(s.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text('${s.contacto} • ${s.telefono}'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.history, color: Colors.teal),
+                              onPressed: () => _showSupplierHistory(s), // RF 49
+                              tooltip: 'Ver historial',
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _deleteSupplier(s),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFormTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _nombreCtrl,
+            decoration: InputDecoration(labelText: 'Nombre *', border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _contactoCtrl,
+            decoration: InputDecoration(labelText: 'Persona de Contacto', border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _telefonoCtrl,
+            keyboardType: TextInputType.phone,
+            decoration: InputDecoration(labelText: 'Teléfono *', border: const OutlineInputBorder(), filled: true, fillColor: Colors.grey[100]),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(width: double.infinity, height: 50, child: ElevatedButton.icon(onPressed: _saveSupplier, icon: const Icon(Icons.save), label: const Text('GUARDAR PROVEEDOR', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white))),
+        ],
+      ),
+    );
   }
 }
