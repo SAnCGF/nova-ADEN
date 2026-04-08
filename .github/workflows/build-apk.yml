@@ -33,18 +33,29 @@ jobs:
           cache: true
       
       - name: Install dependencies
-        working-directory: nova_aden_app
-        run: flutter pub get
+        run: |
+          cd nova_aden_app
+          flutter pub get
       
       - name: Build APK Release
-        working-directory: nova_aden_app
-        run: flutter build apk --release --no-tree-shake-icons
+        run: |
+          cd nova_aden_app
+          flutter build apk --release --no-tree-shake-icons
+          echo "✅ Build completed"
       
-      - name: Find and Upload APK
+      - name: Find APK file
+        id: find_apk
+        run: |
+          APK_PATH=$(find . -name "app-release.apk" -type f | head -1)
+          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+          echo "🔍 APK found at: $APK_PATH"
+          ls -lh "$APK_PATH"
+      
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: nova-aden-apk
-          path: nova_aden_app/build/app/outputs/flutter-apk/app-release.apk
+          path: ${{ steps.find_apk.outputs.apk_path }}
           retention-days: 30
           if-no-files-found: error
       
@@ -52,7 +63,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
-          files: nova_aden_app/build/app/outputs/flutter-apk/app-release.apk
+          files: ${{ steps.find_apk.outputs.apk_path }}
           body: |
             ## 🎉 Nova ADEN - ${{ github.ref_name }}
             
@@ -67,7 +78,7 @@ jobs:
             - Android 8.0+ (minSdk 26)
             - Flutter 3.22.0
             - SQLite Offline
-            - APK Universal ~70 MB
+            - APK Universal
             
             ### 👨‍💻 Freddy - Tesis Nova ADEN
           draft: false
