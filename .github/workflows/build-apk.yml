@@ -1,4 +1,4 @@
-name: Build APK Release
+name: Build APK Solo
 
 on:
   push:
@@ -8,31 +8,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.0'
-          channel: 'stable'
-
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Build APK
-        run: flutter build apk --release --no-tree-shake-icons --obfuscate --split-debug-info=build/symbols
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - run: flutter pub get
+      - run: flutter build apk --release --no-tree-shake-icons
+      - uses: actions/upload-artifact@v4
         with:
-          name: nova-aden-apk-universal
-          path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 30
+          name: app-release.apk
+          path: build/app/outputs/flutter-apk/
