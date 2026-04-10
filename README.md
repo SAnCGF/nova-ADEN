@@ -1,6 +1,6 @@
 # nova_aden
 
-A new Flutter project.
+Apk nova-Aden para la gestion operativa de MIPYMES y TCP.
 
 ## Getting Started
 

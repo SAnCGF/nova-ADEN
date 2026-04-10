@@ -18,7 +18,7 @@ class ThemeProvider extends ChangeNotifier {
     useMaterial3: true,
     brightness: Brightness.light,
     primarySwatch: Colors.blue,
-    cardTheme: const CardThemeData(
+    cardTheme: CardThemeData(
       elevation: 2,
       margin: EdgeInsets.all(8),
     ),
@@ -28,7 +28,7 @@ class ThemeProvider extends ChangeNotifier {
     useMaterial3: true,
     brightness: Brightness.dark,
     primarySwatch: Colors.blue,
-    cardTheme: const CardThemeData(
+    cardTheme: CardThemeData(
       elevation: 2,
       margin: EdgeInsets.all(8),
     ),
