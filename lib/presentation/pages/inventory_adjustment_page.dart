@@ -73,7 +73,7 @@ class _InventoryAdjustmentPageState extends State<InventoryAdjustmentPage> {
           DropdownButtonFormField<Product>(
             decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Seleccionar producto'),
             items: _products.map((p) => DropdownMenuItem(value: p, child: Text('${p.nombre} (Stock: ${p.stockActual})'))).toList(),
-            initialValue: _selectedProduct,
+            value: _selectedProduct,
             onChanged: (v) => setState(() => _selectedProduct = v),
           ),
           const SizedBox(height: 16),
@@ -98,7 +98,7 @@ class _InventoryAdjustmentPageState extends State<InventoryAdjustmentPage> {
           DropdownButtonFormField<String>(
             decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Seleccionar motivo'),
             items: ['Reposición', 'Error de conteo', 'Producto dañado', 'Devolución', 'Otro'].map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
-            initialValue: _reason.isEmpty ? null : _reason,
+            value: _reason.isEmpty ? null : _reason,
             onChanged: (v) => setState(() => _reason = v ?? ''),
           ),
           const SizedBox(height: 16),

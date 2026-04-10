@@ -122,7 +122,7 @@ class _BulkPricePageState extends State<BulkPricePage> {
                                     labelText: 'Tipo de cambio', 
                                     border: OutlineInputBorder(),
                                   ), 
-                                  initialValue: _increase, 
+                                  value: _increase, 
                                   items: const [
                                     DropdownMenuItem(value: true, child: Text('➕ Aumentar')), 
                                     DropdownMenuItem(value: false, child: Text('➖ Disminuir')),
