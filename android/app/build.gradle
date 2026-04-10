@@ -42,17 +42,24 @@ android {
 
     defaultConfig {
         applicationId "com.novaaden.app"
-        minSdkVersion flutter.minSdkVersion
-        targetSdkVersion flutter.targetSdkVersion
+        minSdk 26
+        targetSdk flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
 
     buildTypes {
         release {
-            signingConfig signingConfigs.debug
-            shrinkResources false
+            // ✅ OPTIMIZACIÓN DE TAMAÑO
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            
+            signingConfig signingConfigs.release
+        }
+        debug {
             minifyEnabled false
+            shrinkResources false
         }
     }
 }
@@ -62,5 +69,5 @@ flutter {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22"
 }
