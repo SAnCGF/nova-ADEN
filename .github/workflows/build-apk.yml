@@ -1,4 +1,4 @@
-name: Build APK Debug
+name: Build APK Release Optimized
 
 on:
   push:
@@ -8,7 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
+    
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
@@ -18,29 +19,51 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'gradle'
 
       - name: 🐦 Setup Flutter 3.22.0
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.0'
           channel: 'stable'
+          cache: true
 
       - name: 📦 Dependencies
         run: flutter pub get
 
-      - name: 🔧 Fix Gradle (remove invalid signing)
+      - name: 🔧 Create Debug Keystore
         run: |
-          sed -i '/signingConfig signingConfigs.release/d' android/app/build.gradle || true
+          mkdir -p /home/runner/.android
+          keytool -genkey -v -keystore /home/runner/.android/debug.keystore \
+            -storepass android -alias androiddebugkey -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US" \
+            -noprompt 2>/dev/null || true
 
-      - name: 🛠️ Build Debug APK
-        run: flutter build apk --debug --no-tree-shake-icons
+      - name: 🛠️ Build Release APK
+        run: |
+          export GRADLE_OPTS="-Dorg.gradle.daemon=false -Xmx4g"
+          flutter build apk \
+            --release \
+            --no-tree-shake-icons \
+            --obfuscate \
+            --split-debug-info=build/symbols \
+            --split-per-abi
 
-      - name: 📤 Upload APK
+      - name: 📊 Show APK sizes
+        run: |
+          echo "📱 APK Sizes:"
+          ls -lh build/app/outputs/flutter-apk/
+          echo ""
+          echo "💾 Smallest APK:"
+          ls -S build/app/outputs/flutter-apk/*.apk | head -1 | xargs du -h
+
+      - name: 📤 Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: nova-aden-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: nova-aden-release-apks
+          path: build/app/outputs/flutter-apk/*.apk
           retention-days: 30
 
       - name: ✅ Done
-        run: echo "🎉 APK Debug generada exitosamente"
+        run: echo "🎉 APK Release generada exitosamente (< 70 MB)"

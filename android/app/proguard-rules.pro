@@ -11,15 +11,8 @@
 
 # Provider
 -keep class com.example.** { *; }
--keep class * extends com.example.** { *; }
 
 # Keep main method
 -keepclassmembers class ** {
     public static void main(java.lang.String[]);
-}
-
-# Keep Flutter plugin registration
--keepattributes *Annotation*
--keepclasseswithmembernames class * {
-    native <methods>;
 }
