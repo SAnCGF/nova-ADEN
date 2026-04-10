@@ -18,19 +18,11 @@ class ThemeProvider extends ChangeNotifier {
     useMaterial3: true,
     brightness: Brightness.light,
     primarySwatch: Colors.blue,
-    cardTheme: CardThemeData(
-      elevation: 2,
-      margin: EdgeInsets.all(8),
-    ),
   );
 
   final ThemeData _darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
     primarySwatch: Colors.blue,
-    cardTheme: CardThemeData(
-      elevation: 2,
-      margin: EdgeInsets.all(8),
-    ),
   );
 }
