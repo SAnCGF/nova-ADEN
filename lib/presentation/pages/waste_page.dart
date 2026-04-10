@@ -11,6 +11,8 @@ class WastePage extends StatefulWidget {
 }
 
 class _WastePageState extends State<WastePage> with SingleTickerProviderStateMixin {
+  final List<String> _motivosMermas = ['Vencimiento', 'Dañado', 'Pérdida', 'Desecho', 'Otro'];
+  String _motivoSeleccionado = 'Vencimiento';
   final _productRepo = ProductRepository();
   List<Product> _products = [];
   List<Map<String, dynamic>> _wasteHistory = [];

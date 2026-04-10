@@ -79,4 +79,17 @@ class ProductRepository {
     final result = await db.rawQuery('SELECT COUNT(*) as count FROM productos WHERE activo = 1');
     return result.first['count'] as int? ?? 0;
   }
+
+  // RF 23: Consultar stock valorado
+  Future<Map<String, dynamic>> getStockValorado() async {
+    final db = await _db;
+    final result = await db.rawQuery(
+      'SELECT SUM(stockActual * costo) as valorTotal, SUM(stockActual * precioVenta) as valorVenta FROM productos WHERE activo = 1',
+    );
+    return {
+      'valorCosto': (result.first['valorTotal'] as num?)?.toDouble() ?? 0.0,
+      'valorVenta': (result.first['valorVenta'] as num?)?.toDouble() ?? 0.0,
+      'gananciaPotencial': ((result.first['valorVenta'] as num?)?.toDouble() ?? 0.0) - ((result.first['valorTotal'] as num?)?.toDouble() ?? 0.0),
+    };
+  }
 }

@@ -11,6 +11,7 @@ class InventoryAdjustmentsPage extends StatefulWidget {
 }
 
 class _InventoryAdjustmentsPageState extends State<InventoryAdjustmentsPage> {
+  bool _esAjustePositivo = true;
   final _productRepo = ProductRepository();
   List<Product> _products = [];
   Product? _selectedProduct;
