@@ -48,4 +48,35 @@ class ProductRepository {
       where: 'stockActual <= stockMinimo');
     return results.map((m) => Product.fromMap(m)).toList();
   }
+
+  // RF 10: Actualizar costo promedio ponderado
+  Future<void> updateCostoPromedio(int productId, double nuevoCosto, int nuevaCantidad) async {
+    final db = await _db;
+    final product = await getProductById(productId);
+    if (product != null) {
+      final stockActual = product.stockActual;
+      final costoActual = product.costo ?? 0.0;
+      final totalStock = stockActual + nuevaCantidad;
+      if (totalStock > 0) {
+        final nuevoCostoPromedio = ((stockActual * costoActual) + (nuevaCantidad * nuevoCosto)) / totalStock;
+        await db.update('productos', {'costo': nuevoCostoPromedio}, where: 'id = ?', whereArgs: [productId]);
+      }
+    }
+  }
+
+  // RF 40: Obtener cantidad de productos con stock bajo
+  Future<int> getLowStockCount() async {
+    final db = await _db;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM productos WHERE stockActual <= stockMinimo',
+    );
+    return result.first['count'] as int? ?? 0;
+  }
+
+  // RF 40: Obtener total de productos
+  Future<int> getTotalProducts() async {
+    final db = await _db;
+    final result = await db.rawQuery('SELECT COUNT(*) as count FROM productos WHERE activo = 1');
+    return result.first['count'] as int? ?? 0;
+  }
 }

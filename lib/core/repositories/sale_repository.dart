@@ -137,4 +137,28 @@ class SaleRepository {
     ''');
     return results;
   }
+
+  // RF 40: Obtener ventas del día
+  Future<List<Map<String, dynamic>>> getVentasDelDia() async {
+    final db = await _db;
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final result = await db.rawQuery(
+      'SELECT * FROM ventas WHERE fecha >= ?',
+      [startOfDay.toIso8601String()],
+    );
+    return result;
+  }
+
+  // RF 40: Obtener total vendido del día
+  Future<double> getTotalVentasDelDia() async {
+    final db = await _db;
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final result = await db.rawQuery(
+      'SELECT SUM(total) as total FROM ventas WHERE fecha >= ?',
+      [startOfDay.toIso8601String()],
+    );
+    return (result.first['total'] as num?)?.toDouble() ?? 0.0;
+  }
 }

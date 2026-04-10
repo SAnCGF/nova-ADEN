@@ -70,6 +70,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
         categoria: _categoriaController.text.trim().isEmpty ? null : _categoriaController.text.trim(),
         esFavorito: _esFavorito,
         stockCritico: int.tryParse(_stockCriticoController.text),
+        unidadMedida: 'und',
       );
 
       if (widget.product == null) {
