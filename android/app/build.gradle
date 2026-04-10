@@ -46,30 +46,25 @@ android {
         targetSdk flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        multiDexEnabled true
     }
 
     signingConfigs {
         release {
-            // Usar debug keystore para release (solo para desarrollo/demo)
-            storeFile file(System.getenv("KEYSTORE_PATH") ?: "/home/runner/.android/debug.keystore")
-            storePassword System.getenv("KEYSTORE_PASSWORD") ?: "android"
-            keyAlias System.getenv("KEY_ALIAS") ?: "androiddebugkey"
-            keyPassword System.getenv("KEY_PASSWORD") ?: "android"
+            // Usamos el keystore de debug para asegurar que siempre firme
+            storeFile file(System.getenv("HOME") + "/.android/debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
         }
     }
 
     buildTypes {
         release {
             signingConfig signingConfigs.release
-            // Optimizaciones para reducir tamaño
+            // Optimizaciones de tamaño sin romper la app
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-        debug {
-            minifyEnabled false
-            shrinkResources false
         }
     }
 }

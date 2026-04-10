@@ -1,4 +1,4 @@
-# Flutter
+# Reglas para evitar que la app se cierre al abrirse
 -keep class io.flutter.app.** { *; }
 -keep class io.flutter.plugin.** { *; }
 -keep class io.flutter.util.** { *; }
@@ -6,13 +6,10 @@
 -keep class io.flutter.** { *; }
 -keep class io.flutter.plugins.** { *; }
 
-# SQLite
+# Mantener clases de SQLite
 -keep class org.sqlite.** { *; }
 
-# Provider
--keep class com.example.** { *; }
+# Mantener Provider
+-keep class * extends com.example.** { *; }
 
-# Keep main method
--keepclassmembers class ** {
-    public static void main(java.lang.String[]);
-}
+-keepattributes *Annotation*

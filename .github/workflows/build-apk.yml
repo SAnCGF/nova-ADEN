@@ -1,4 +1,4 @@
-name: Build APK Release Optimized
+name: Build Universal Release APK
 
 on:
   push:
@@ -8,8 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    
+    timeout-minutes: 30
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
@@ -19,51 +18,30 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'gradle'
 
       - name: 🐦 Setup Flutter 3.22.0
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.0'
           channel: 'stable'
-          cache: true
 
       - name: 📦 Dependencies
         run: flutter pub get
 
-      - name: 🔧 Create Debug Keystore
+      - name: 🛠️ Build Universal Release APK
         run: |
-          mkdir -p /home/runner/.android
-          keytool -genkey -v -keystore /home/runner/.android/debug.keystore \
-            -storepass android -alias androiddebugkey -keypass android \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN=Android Debug,O=Android,C=US" \
-            -noprompt 2>/dev/null || true
+          # Construye UNA sola APK universal (como la Foto 9 que funcionaba)
+          # minifyEnabled en build.gradle la dejará en ~45-50MB
+          flutter build apk --release --no-tree-shake-icons
 
-      - name: 🛠️ Build Release APK
-        run: |
-          export GRADLE_OPTS="-Dorg.gradle.daemon=false -Xmx4g"
-          flutter build apk \
-            --release \
-            --no-tree-shake-icons \
-            --obfuscate \
-            --split-debug-info=build/symbols \
-            --split-per-abi
-
-      - name: 📊 Show APK sizes
-        run: |
-          echo "📱 APK Sizes:"
-          ls -lh build/app/outputs/flutter-apk/
-          echo ""
-          echo "💾 Smallest APK:"
-          ls -S build/app/outputs/flutter-apk/*.apk | head -1 | xargs du -h
-
-      - name: 📤 Upload APKs
+      - name: 📤 Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: nova-aden-release-apks
-          path: build/app/outputs/flutter-apk/*.apk
+          name: nova-aden-release-universal
+          path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
       - name: ✅ Done
-        run: echo "🎉 APK Release generada exitosamente (< 70 MB)"
+        run: |
+          echo "🎉 APK Release Universal generada:"
+          ls -lh build/app/outputs/flutter-apk/app-release.apk
