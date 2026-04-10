@@ -123,4 +123,34 @@ class ProductRepository {
          ORDER BY margenPorcentaje DESC''',
     );
   }
+  // RF 71, 73, 74
+  Future<void> cambiarUnidadMedida(int productId, String nuevaUnidad) async {
+    final db = await _db;
+    await db.update('productos', {'unidadMedida': nuevaUnidad}, where: 'id = ?', whereArgs: [productId]);
+  }
+  Future<int> duplicarProducto(int productId) async {
+    final p = await getProductById(productId);
+    if (p != null) {
+      return await createProduct(Product(id: null, nombre: '${p.nombre} (Copia)', codigo: '${p.codigo}-COPY', costo: p.costo ?? 0.0, precioVenta: p.precioVenta, stockActual: 0, stockMinimo: p.stockMinimo, unidadMedida: p.unidadMedida ?? 'und', activo: true));
+    }
+    return -1;
+  }
+  Future<void> archivarProducto(int productId, bool activo) async {
+    final db = await _db;
+    await db.update('productos', {'activo': activo ? 1 : 0}, where: 'id = ?', whereArgs: [productId]);
+  }
+  // RF 36
+  Future<int> actualizarPreciosMasivo(List<int> ids, double porc, bool aumento) async {
+    final db = await _db;
+    int count = 0;
+    for (var id in ids) {
+      final p = await getProductById(id);
+      if (p != null) {
+        final nuevo = aumento ? p.precioVenta * (1 + porc/100) : p.precioVenta * (1 - porc/100);
+        await db.update('productos', {'precioVenta': nuevo}, where: 'id = ?', whereArgs: [id]);
+        count++;
+      }
+    }
+    return count;
+  }
 }

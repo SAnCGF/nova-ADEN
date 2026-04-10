@@ -182,4 +182,8 @@ class SettingsPage extends StatelessWidget {
   // RF 68: Recordatorios de stock
   bool _recordatorioStock = false;
   int _diasRecordatorio = 7;
+  // RF 65: Impuestos
+  double _impuestoPredeterminado = 0.0;
+  // RF 66: Cabecera
+  TextEditingController _nombreEmpresaCtrl = TextEditingController();
 }
