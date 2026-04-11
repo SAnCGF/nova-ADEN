@@ -1,4 +1,4 @@
-name: Build Universal Release APK
+name: Build Release APK (No Minify)
 
 on:
   push:
@@ -28,7 +28,7 @@ jobs:
       - name: 📦 Dependencies
         run: flutter pub get
 
-      - name: 🔑 Generate Debug Keystore
+      - name: 🔑 Generate Keystore
         run: |
           mkdir -p ~/.android
           keytool -genkey -v -keystore ~/.android/debug.keystore \
@@ -37,17 +37,17 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" \
             -noprompt
 
-      - name: 🛠️ Build Universal Release APK
+      - name: 🛠️ Build Release APK
         run: flutter build apk --release --no-tree-shake-icons
 
       - name: 📤 Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: nova-aden-release-universal
+          name: nova-aden-release-working
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
-      - name: ✅ Done
+      - name: ✅ Show Size
         run: |
-          echo "🎉 APK Release Universal generada:"
+          echo "📱 APK Size:"
           ls -lh build/app/outputs/flutter-apk/app-release.apk
