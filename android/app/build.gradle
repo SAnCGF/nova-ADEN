@@ -46,6 +46,7 @@ android {
         targetSdk flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        multiDexEnabled true
     }
 
     signingConfigs {
@@ -60,13 +61,27 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
-            // DESACTIVAR minify/shrink para evitar crashes
+            // COMPLETAMENTE DESACTIVADO - Sin optimizaciones
             minifyEnabled false
             shrinkResources false
+            // Sin ProGuard
+            useProguard false
+            // Debugging habilitado para ver errores
+            debuggable false
+            jniDebuggable false
+            renderscriptDebuggable false
         }
         debug {
             minifyEnabled false
             shrinkResources false
+            debuggable true
+        }
+    }
+    
+    // Asegurar que todas las arquitecturas estén incluidas
+    splits {
+        abi {
+            enable false
         }
     }
 }
@@ -77,4 +92,5 @@ flutter {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22"
+    implementation 'androidx.multidex:multidex:2.0.1'
 }
