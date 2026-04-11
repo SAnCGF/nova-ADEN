@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../widgets/numeric_keypad.dart';
 import 'package:sqflite/sqflite.dart';
 import 'dart:convert';
 import '../../core/models/product.dart';
@@ -32,6 +31,7 @@ class _PosPageState extends State<PosPage> {
   final _searchController = TextEditingController();
   final _barcodeController = TextEditingController();
   double _amountPaid = 0.0;
+  String _selectedCurrency = 'CUP';
   double _mlcRate = 120.0;
   double _usdRate = 1.0;
   bool _isCredit = false;
@@ -61,6 +61,7 @@ class _PosPageState extends State<PosPage> {
   }
 
   double _convert(double cupAmount) {
+    return CurrencyHelper.convertFromCUP(cupAmount, _selectedCurrency, _mlcRate, _usdRate);
   }
 
   // RF 53: Buscar producto por código de barras
@@ -153,6 +154,7 @@ class _PosPageState extends State<PosPage> {
         _cart.add(CartItem(
           productoId: product.id!,
           nombre: product.nombre,
+          precioCUP: product.precioVenta,
           cantidad: 1,
           stockDisponible: product.stockActual,
         ));
@@ -179,6 +181,12 @@ class _PosPageState extends State<PosPage> {
   void _removeFromCart(int index) => setState(() => _cart.removeAt(index));
   void _clearCart() => setState(() => _cart.clear());
 
+  double get _subtotalCUP => _cart.fold(0.0, (sum, c) => sum + c.subtotalCUP);
+  double get _discountAmountCUP => _applyDiscount ? _subtotalCUP * (_discountPercent / 100) : 0.0;
+  double get _totalCUP => _subtotalCUP - _discountAmountCUP;
+  double get _subtotal => _convert(_subtotalCUP);
+  double get _discountAmount => _convert(_discountAmountCUP);
+  double get _total => _convert(_totalCUP);
   double get _amountPaidForeign => _convert(_amountPaid);
   double get _change => _isCredit ? 0.0 : (_amountPaidForeign >= _total ? _amountPaidForeign - _total : 0.0);
   double get _pending => _isCredit ? _total - _amountPaidForeign : 0.0;
@@ -212,6 +220,7 @@ class _PosPageState extends State<PosPage> {
           'fecha_creacion': DateTime.now().toIso8601String(),
           'cliente_id': _selectedCustomer?.id,
           'productos': jsonEncode(_cart.map((c) => c.toMap()).toList()),
+          'total': _totalCUP,
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('✅ Venta pausada'), backgroundColor: Colors.green),
@@ -242,6 +251,9 @@ class _PosPageState extends State<PosPage> {
       );
       return;
     }
+    final totalCUPToPay = CurrencyHelper.convertToCUP(_total, _selectedCurrency, _mlcRate, _usdRate);
+    final paidCUP = CurrencyHelper.convertToCUP(_amountPaidForeign, _selectedCurrency, _mlcRate, _usdRate);
+    if (!_isCredit && paidCUP < totalCUPToPay) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('⚠️ Pago insuficiente'), backgroundColor: Colors.orange),
       );
@@ -252,12 +264,18 @@ class _PosPageState extends State<PosPage> {
         ventaId: 0,
         productoId: c.productoId,
         cantidad: c.cantidad,
+        precioUnitario: c.precioCUP,
+        subtotal: c.subtotalCUP,
       )).toList();
       final saleId = await _saleRepo.createSale(
         _selectedCustomer?.id,
         lines,
+        totalCUPToPay,
+        _isCredit ? paidCUP : totalCUPToPay,
+        _isCredit ? (totalCUPToPay - paidCUP) : 0.0,
         '',
         _selectedCurrency,
+        _selectedCurrency == 'CUP' ? 1.0 : (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate),
       );
       final createdSale = await _saleRepo.getSaleById(saleId);
       if (createdSale != null) {
@@ -367,6 +385,7 @@ class _PosPageState extends State<PosPage> {
                 dropdownColor: Colors.blue[800],
                 underline: const SizedBox(),
                 items: const [
+                  DropdownMenuItem(value: 'CUP', child: Text('🇨🇺 CUP', style: TextStyle(color: Colors.white))),
                   DropdownMenuItem(value: 'MLC', child: Text('💳 MLC', style: TextStyle(color: Colors.white))),
                   DropdownMenuItem(value: 'USD', child: Text('🇺🇸 USD', style: TextStyle(color: Colors.white))),
                 ],
@@ -447,6 +466,7 @@ class _PosPageState extends State<PosPage> {
               child: Text('${c.cantidad}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
             title: Text(c.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_convert(c.precioCUP).toStringAsFixed(2)} c/u'),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -508,6 +528,7 @@ class _PosPageState extends State<PosPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('Ahorro:', style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold)),
+                  Text('-${_selectedCurrency == 'CUP' ? '\$' : ''}${_discountAmount.toStringAsFixed(2)}', style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold, fontSize: 16)),
                 ],
               ),
             ],
@@ -528,35 +549,42 @@ class _PosPageState extends State<PosPage> {
         children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             const Text('Subtotal:', style: TextStyle(fontSize: 16)),
+            Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16)),
           ]),
           const SizedBox(height: 8),
           if (_applyDiscount)
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Text('Descuento:', style: TextStyle(color: Colors.green[700])),
+              Text('-${_selectedCurrency == 'CUP' ? '\$' : ''}${_discountAmount.toStringAsFixed(2)}', style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold)),
             ]),
           const SizedBox(height: 8),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             const Text('TOTAL:', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_total.toStringAsFixed(2)} $_selectedCurrency', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.green)),
           ]),
           const SizedBox(height: 12),
           const Divider(),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text('Pagado:', style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+            Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_amountPaidForeign.toStringAsFixed(2)}', style: TextStyle(fontSize: 16, color: Colors.grey[700])),
           ]),
           const SizedBox(height: 8),
           if (!_isCredit) ...[
             if (_amountPaidForeign < _total)
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 const Text('⚠️ Faltante:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
+                Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${(_total - _amountPaidForeign).toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
               ])
             else if (_amountPaidForeign >= _total)
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 const Text('🔄 CAMBIO:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
+                Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_change.toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue)),
               ]),
           ],
           if (_isCredit && _amountPaidForeign > 0)
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               const Text('⚠️ Pendiente:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
+              Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_pending.toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
             ]),
           const SizedBox(height: 16),
           SizedBox(
@@ -564,45 +592,6 @@ class _PosPageState extends State<PosPage> {
             height: 55,
             child: ElevatedButton.icon(
               onPressed: _cart.isEmpty ? null : _completeSale,
-          // Campo de monto pagado
-          TextField(
-            controller: TextEditingController(text: _amountPaidForeign.toString()),
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: 'Monto Pagado',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              prefixIcon: const Icon(Icons.money),
-            ),
-            onChanged: (v) {
-              setState(() {
-                _amountPaidForeign = double.tryParse(v) ?? 0.0;
-              });
-            },
-          ),
-          const SizedBox(height: 12),
-          // Teclado numérico
-          NumericKeypad(
-            onNumberPressed: (v) {
-              setState(() {
-                _amountPaidForeign = double.parse((_amountPaidForeign.toString() + v).isEmpty ? '0' : (_amountPaidForeign.toString() + v));
-              });
-            },
-            onBackspace: () {
-              setState(() {
-                var val = _amountPaidForeign.toString();
-                if (val.length > 1) {
-                  _amountPaidForeign = double.parse(val.substring(0, val.length - 1));
-                } else {
-                  _amountPaidForeign = 0.0;
-                }
-              });
-            },
-            onClear: () {
-              setState(() => _amountPaidForeign = 0.0);
-            },
-          ),
-          const SizedBox(height: 12),
-
               icon: const Icon(Icons.check_circle, size: 26),
               label: const Text('CONFIRMAR VENTA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
@@ -631,6 +620,7 @@ class _PosPageState extends State<PosPage> {
               dropdownColor: Theme.of(context).appBarTheme.backgroundColor,
               underline: const SizedBox(),
               items: const [
+                DropdownMenuItem(value: 'CUP', child: Text('🇨🇺 CUP')),
                 DropdownMenuItem(value: 'MLC', child: Text('💳 MLC')),
                 DropdownMenuItem(value: 'USD', child: Text('🇺🇸 USD')),
               ],
@@ -690,6 +680,7 @@ class _PosPageState extends State<PosPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('Stock: ${p.stockActual}'),
+                              Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_convert(p.precioVenta).toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
                             ],
                           ),
                           trailing: ElevatedButton(
@@ -718,6 +709,7 @@ class _PosPageState extends State<PosPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text('${_cart.length} productos', style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                                  Text('Total: ${_selectedCurrency == 'CUP' ? '\$' : ''}${_total.toStringAsFixed(2)} $_selectedCurrency', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
                                 ],
                               ),
                             ),
@@ -765,21 +757,25 @@ class _PosPageState extends State<PosPage> {
 class CartItem {
   final int productoId;
   final String nombre;
+  final double precioCUP;
   int cantidad;
   final int stockDisponible;
 
   CartItem({
     required this.productoId,
     required this.nombre,
+    required this.precioCUP,
     required this.cantidad,
     required this.stockDisponible,
   });
 
+  double get subtotalCUP => precioCUP * cantidad;
 
   Map<String, dynamic> toMap() {
     return {
       'productoId': productoId,
       'nombre': nombre,
+      'precioCUP': precioCUP,
       'cantidad': cantidad,
       'stockDisponible': stockDisponible,
     };
@@ -789,6 +785,7 @@ class CartItem {
     return CartItem(
       productoId: map['productoId'] as int,
       nombre: map['nombre'] as String,
+      precioCUP: (map['precioCUP'] as num).toDouble(),
       cantidad: map['cantidad'] as int,
       stockDisponible: map['stockDisponible'] as int,
     );

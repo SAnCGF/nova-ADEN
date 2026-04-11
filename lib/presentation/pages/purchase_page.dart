@@ -298,30 +298,6 @@ class _PurchasePageState extends State<PurchasePage> {
                       ],
                       value: _selectedSupplier,
                       onChanged: (v) => setState(() => _selectedSupplier = v),
-                    const SizedBox(width: 8),
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        // Navegar a página de registro de proveedor
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const SupplierPage()),
-                        );
-                        if (result != null) {
-                          setState(() {
-                            _suppliers.add(result);
-                            _selectedSupplier = result;
-                          });
-                        }
-                      },
-                      icon: const Icon(Icons.add),
-                      label: const Text(''),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      ),
-                    ),
-
                     ),
                   ),
                 
