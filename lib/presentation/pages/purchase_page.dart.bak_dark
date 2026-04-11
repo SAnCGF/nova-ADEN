@@ -313,7 +313,7 @@ class _PurchasePageState extends State<PurchasePage> {
                        labelText: 'Proveedor *',
                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                        filled: true,
-                       fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100],
+                       fillColor: Colors.grey[100],
                      ),
                      items: [
                        const DropdownMenuItem(value: null, child: Text('Seleccionar proveedor')),
