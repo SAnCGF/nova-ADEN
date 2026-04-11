@@ -7,19 +7,15 @@ plugins {
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file('local.properties')
 if (localPropertiesFile.exists()) {
-    localPropertiesFile.withReader('UTF-8') { reader ->
-        localProperties.load(reader)
-    }
+    localPropertiesFile.withReader('UTF-8') { reader -> localProperties.load(reader) }
 }
 
-def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
-if (flutterVersionCode == null) { flutterVersionCode = '1' }
-def flutterVersionName = localProperties.getProperty('flutter.versionName')
-if (flutterVersionName == null) { flutterVersionName = '1.0' }
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode') ?: '1'
+def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '1.0'
 
 android {
     namespace "com.novaaden.app"
-    compileSdk 34  // Forzar versión estable
+    compileSdk 34
     ndkVersion flutter.ndkVersion
 
     compileOptions {
@@ -27,7 +23,6 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     kotlinOptions { jvmTarget = '1.8' }
-    sourceSets { main.java.srcDirs += 'src/main/kotlin' }
 
     defaultConfig {
         applicationId "com.novaaden.app"
@@ -50,24 +45,13 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
-            // DESACTIVAR TODO para diagnóstico
+            // DESACTIVAR TODO LO QUE PUEDA ROMPER LA APP
             minifyEnabled false
             shrinkResources false
-            crunchPngs false
+            debuggable false
+            // Reglas vacías para evitar que R8 actúe
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
-        debug {
-            minifyEnabled false
-            shrinkResources false
-        }
-    }
-    
-    // Evitar conflictos de arquitectura
-    packagingOptions {
-        exclude 'META-INF/DEPENDENCIES'
-        exclude 'META-INF/LICENSE'
-        exclude 'META-INF/LICENSE.txt'
-        exclude 'META-INF/NOTICE'
-        exclude 'META-INF/NOTICE.txt'
     }
 }
 
