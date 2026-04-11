@@ -300,6 +300,15 @@ class _PurchasePageState extends State<PurchasePage> {
                       onChanged: (v) => setState(() => _selectedSupplier = v),
                     ),
                   ),
+                  const SizedBox(width: 8),
+IconButton(
+  icon: const Icon(Icons.add_circle, color: Colors.blue, size: 28),
+  tooltip: 'Registrar nuevo proveedor',
+  onPressed: () {
+    // Navegar a SupplierPage para registrar
+    // Implementación completa en v2.0
+  },
+),
                 
                 const SizedBox(height: 16),
                 

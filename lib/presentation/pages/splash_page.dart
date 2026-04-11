@@ -14,10 +14,12 @@ class _SplashPageState extends State<SplashPage> {
   void initState() {
     super.initState();
     Timer(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
-      );
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      }
     });
   }
 
@@ -29,10 +31,7 @@ class _SplashPageState extends State<SplashPage> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1976D2),
-              Color(0xFF42A5F5),
-            ],
+            colors: [Color(0xFF1976D2), Color(0xFF42A5F5)],
           ),
         ),
         child: SafeArea(
@@ -54,34 +53,17 @@ class _SplashPageState extends State<SplashPage> {
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.shopping_bag,
-                  size: 80,
-                  color: Color(0xFF1976D2),
-                ),
+                child: const Icon(Icons.shopping_bag, size: 80, color: Color(0xFF1976D2)),
               ),
               const SizedBox(height: 32),
               
               // Título
-              const Text(
-                'Nova ADEN',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
+              const Text('Nova ADEN', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white)),
               const SizedBox(height: 8),
-              const Text(
-                'Administrador de Negocio',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white70,
-                ),
-              ),
+              const Text('Administrador de Negocio', style: TextStyle(fontSize: 16, color: Colors.white70)),
               const SizedBox(height: 48),
               
-              // Loading dots
+              // Loading
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -108,23 +90,9 @@ class _SplashPageState extends State<SplashPage> {
               ),
               
               const SizedBox(height: 32),
-              
-              // Versión
-              const Text(
-                'Versión 1.0.0',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                ),
-              ),
+              const Text('Versión 1.0.0', style: TextStyle(color: Colors.white70, fontSize: 12)),
               const SizedBox(height: 4),
-              const Text(
-                '© 2026 Nova ADEN. Todos los derechos reservados.',
-                style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 10,
-                ),
-              ),
+              const Text('© 2026 Nova ADEN', style: TextStyle(color: Colors.white54, fontSize: 10)),
               const SizedBox(height: 24),
             ],
           ),
@@ -137,14 +105,7 @@ class _SplashPageState extends State<SplashPage> {
     return AnimatedOpacity(
       opacity: 1.0,
       duration: Duration(milliseconds: 400 + (index * 200)),
-      child: Container(
-        width: 8,
-        height: 8,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-        ),
-      ),
+      child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
     );
   }
 
@@ -161,14 +122,7 @@ class _SplashPageState extends State<SplashPage> {
         children: [
           Icon(icon, size: 14, color: Colors.white),
           const SizedBox(width: 4),
-          Text(
-            text,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          Text(text, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500)),
         ],
       ),
     );

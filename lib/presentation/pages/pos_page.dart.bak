@@ -566,24 +566,6 @@ class _PosPageState extends State<PosPage> {
           const Divider(),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text('Pagado:', style: TextStyle(fontSize: 16, color: Colors.grey[700])),
-            // Campo para ingresar Monto Pagado
-Padding(
-  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-  child: TextField(
-    keyboardType: TextInputType.numberWithOptions(decimal: true),
-    decoration: InputDecoration(
-      labelText: 'Monto Pagado',
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-      prefixIcon: const Icon(Icons.payments, color: Colors.blue),
-      hintText: '0.00',
-    ),
-    onChanged: (val) {
-      setState(() {
-        _amountPaid = double.tryParse(val) ?? 0.0;
-      });
-    },
-  ),
-),
             Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_amountPaidForeign.toStringAsFixed(2)}', style: TextStyle(fontSize: 16, color: Colors.grey[700])),
           ]),
           const SizedBox(height: 8),
