@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../pages/home_page.dart';
+import 'home_page.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -13,12 +13,11 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-    Timer(const Duration(seconds: 2), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomePage()),
-        );
-      }
+    Timer(const Duration(seconds: 3), () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomePage()),
+      );
     });
   }
 
@@ -26,56 +25,151 @@ class _SplashPageState extends State<SplashPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              Colors.blue[900]!,
-              Colors.blue[700]!,
+              Color(0xFF1976D2),
+              Color(0xFF42A5F5),
             ],
           ),
         ),
-        child: Center(
+        child: SafeArea(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.business_center,
-                size: 100,
-                color: Colors.white,
+              // Logo
+              Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.shopping_bag,
+                  size: 80,
+                  color: Color(0xFF1976D2),
+                ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
+              
+              // Título
               const Text(
                 'Nova ADEN',
                 style: TextStyle(
-                  fontSize: 40,
+                  fontSize: 32,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
-                  letterSpacing: 2,
                 ),
               ),
               const SizedBox(height: 8),
               const Text(
-                'Administrador de Negocios',
+                'Administrador de Negocio',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   color: Colors.white70,
-                  fontStyle: FontStyle.italic,
                 ),
               ),
-              const SizedBox(height: 40),
-              const CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              const SizedBox(height: 48),
+              
+              // Loading dots
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildDot(0),
+                  const SizedBox(width: 8),
+                  _buildDot(1),
+                  const SizedBox(width: 8),
+                  _buildDot(2),
+                ],
               ),
-              const SizedBox(height: 20),
-              Text(
-                'v1.0.0',
-                style: TextStyle(color: Colors.white.withOpacity(0.6)),
+              
+              const Spacer(),
+              
+              // Badges
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildBadge('Offline', Icons.cloud_off),
+                  const SizedBox(width: 12),
+                  _buildBadge('Seguro', Icons.shield),
+                  const SizedBox(width: 12),
+                  _buildBadge('Rápido', Icons.bolt),
+                ],
               ),
+              
+              const SizedBox(height: 32),
+              
+              // Versión
+              const Text(
+                'Versión 1.0.0',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                '© 2026 Nova ADEN. Todos los derechos reservados.',
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 10,
+                ),
+              ),
+              const SizedBox(height: 24),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDot(int index) {
+    return AnimatedOpacity(
+      opacity: 1.0,
+      duration: Duration(milliseconds: 400 + (index * 200)),
+      child: Container(
+        width: 8,
+        height: 8,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBadge(String text, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.white),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
