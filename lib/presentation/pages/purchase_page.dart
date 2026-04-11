@@ -305,10 +305,18 @@ class _PurchasePageState extends State<PurchasePage> {
 IconButton(
   icon: const Icon(Icons.add_circle, color: Colors.blue, size: 28),
   tooltip: 'Registrar nuevo proveedor',
-  onPressed: () {
-    // Navegar a SupplierPage para registrar
-    // Implementación completa en v2.0
-  },
+  onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => SupplierPage()),
+                      );
+                      if (result != null && mounted) {
+                        // El proveedor nuevo se manejará en SupplierPage
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Proveedor registrado')),
+                        );
+                      }
+                    },
 ),
                 
                 const SizedBox(height: 16),
