@@ -273,8 +273,28 @@ class _PurchasePageState extends State<PurchasePage> {
                   child: Row(
                     children: [
                       const Text('Compra rápida (sin proveedor):'),
-                      const SizedBox(width: 8),
-                      Switch(
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      onPressed: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const SupplierPage()),
+                        );
+                        if (result != null && mounted) {
+                          setState(() {
+                            _suppliers.add(result);
+                            _selectedSupplier = result;
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Proveedor registrado')),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.add_business, size: 18),
+                      label: const Text('Nuevo', style: TextStyle(fontSize: 12)),
+                    ),
+                    const SizedBox(width: 8),
+                    Switch(
                         value: _isQuickPurchase,
                         onChanged: (v) => setState(() => _isQuickPurchase = v),
                       ),
