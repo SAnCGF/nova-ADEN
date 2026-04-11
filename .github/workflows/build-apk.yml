@@ -1,4 +1,4 @@
-name: Build Clean Release APK
+name: Build Fixed Release APK
 
 on:
   push:
@@ -41,7 +41,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: nova-aden-clean-apk
+          name: nova-aden-fixed-release
           path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Show Info

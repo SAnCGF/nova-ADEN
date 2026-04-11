@@ -1,8 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'core/utils/theme_provider.dart';
 import 'presentation/pages/home_page.dart';
 
 void main() {
-  runApp(const NovaAdenApp());
+  // CRÍTICO: Inicializar bindings antes de cualquier plugin
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  runApp(
+    // ✅ WRAPPER DE PROVIDER - Esto faltaba y causaba el crash
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const NovaAdenApp(),
+    ),
+  );
 }
 
 class NovaAdenApp extends StatelessWidget {
@@ -10,15 +21,15 @@ class NovaAdenApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Nova ADEN',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
-      home: const HomePage(),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          title: 'Nova ADEN',
+          debugShowCheckedModeBanner: false,
+          theme: themeProvider.themeData,
+          home: const HomePage(),
+        );
+      },
     );
   }
 }
-// Build Fri Apr 10 19:12:03 UTC 2026
