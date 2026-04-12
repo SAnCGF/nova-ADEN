@@ -126,20 +126,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla: Detalles de Compra
-    await db.execute('''
-      CREATE TABLE compra_detalles (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        compra_id INTEGER NOT NULL,
-        producto_id INTEGER NOT NULL,
-        cantidad INTEGER NOT NULL,
-        precio_unitario REAL NOT NULL,
-        subtotal REAL NOT NULL,
-        FOREIGN KEY (compra_id) REFERENCES compras (id),
-        FOREIGN KEY (producto_id) REFERENCES productos (id)
-      )
-    ''');
-
     // Tabla: Ventas Pausadas
     await db.execute('''
       CREATE TABLE ventas_pausadas (

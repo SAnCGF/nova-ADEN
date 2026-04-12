@@ -252,7 +252,7 @@ class _PosPageState extends State<PosPage> {
       return;
     }
     final totalCUPToPay = CurrencyHelper.convertToCUP(_total, _selectedCurrency, _mlcRate, _usdRate);
-    final paidCUP = CurrencyHelper.convertToCUP(_amountPaidForeign, _selectedCurrency, _mlcRate, _usdRate);
+    final paidCUP = _selectedCurrency == 'CUP' ? _amountPaid : _amountPaid * (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate);
     if (!_isCredit && paidCUP < totalCUPToPay) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('⚠️ Pago insuficiente'), backgroundColor: Colors.orange),
