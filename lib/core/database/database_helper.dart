@@ -80,7 +80,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla: Ventas (HU_RV - Registrar Venta)
+        // Tabla: Ventas (HU_RV - Registrar Venta)
     await db.execute('''
       CREATE TABLE ventas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -92,8 +92,9 @@ class DatabaseHelper {
         moneda TEXT DEFAULT 'CUP',
         tasa_cambio REAL DEFAULT 1.0,
         es_fiado INTEGER DEFAULT 0,
-        pagado REAL DEFAULT 0,
-        pendiente REAL DEFAULT 0,
+        monto_pagado REAL DEFAULT 0,
+        monto_pendiente REAL DEFAULT 0,
+        notas_credito TEXT,
         descuento REAL DEFAULT 0,
         created_at TEXT,
         FOREIGN KEY (cliente_id) REFERENCES clientes (id)
