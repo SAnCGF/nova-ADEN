@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/utils/theme_provider.dart';
-import '../../core/widgets/dashboard_widget.dart';  // ✅ NUEVO WIDGET
 import 'pos_page.dart';
 import 'product_list_page.dart';
 import 'purchase_page.dart';
@@ -13,18 +12,17 @@ import 'backup_page.dart';
 import 'supplier_page.dart';
 import 'customer_page.dart';
 import 'credit_payments_page.dart';
-import 'splash_page.dart';
+import 'dashboard_page.dart'; // ✅ Nueva pantalla independiente
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
-
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 5; // ✅ Empieza en 5 (Dashboard)
-
+  int _selectedIndex = 0;
+  
   final List<Widget> _pages = [
     const PosPage(),
     const ProductListPage(),
@@ -37,12 +35,10 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Consumer<ThemeProvider>(
       builder: (context, theme, _) => Scaffold(
-        body: _selectedIndex < 5 
-            ? IndexedStack(index: _selectedIndex, children: _pages)
-            : const DashboardWidget(),  // ✅ Muestra Dashboard si índice es 5
+        body: _pages[_selectedIndex],
         bottomNavigationBar: NavigationBar(
-          selectedIndex: _selectedIndex >= 0 && _selectedIndex < _pages.length ? _selectedIndex : 5,
-          onDestinationSelected: (index) => setState(() => _selectedIndex = index == 4 ? 5 : index + 1),
+          selectedIndex: _selectedIndex >= 0 && _selectedIndex < _pages.length ? _selectedIndex : 0,
+          onDestinationSelected: (index) => setState(() => _selectedIndex = index),
           destinations: const [
             NavigationDestination(icon: Icon(Icons.point_of_sale), label: 'POS'),
             NavigationDestination(icon: Icon(Icons.inventory_2), label: 'Inventario'),
@@ -63,9 +59,17 @@ class _HomePageState extends State<HomePage> {
                     const Icon(Icons.shopping_bag, size: 40, color: Colors.white),
                     const SizedBox(height: 10),
                     Text('Nova ADEN', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white)),
-                    Text('v2.0.0', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70)),
+                    Text('v1.0.0', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70)),
                   ],
                 ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.dashboard),
+                title: const Text('📊 Panel de Control'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const DashboardPage()));
+                },
               ),
               ListTile(leading: const Icon(Icons.supervisor_account), title: const Text('Clientes'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerPage()))),
               ListTile(leading: const Icon(Icons.store), title: const Text('Proveedores'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SupplierPage()))),

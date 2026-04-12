@@ -2,204 +2,150 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import '../../core/utils/theme_provider.dart';
-import 'currency_settings_page.dart';
-import 'backup_page.dart';
-import 'notes_page.dart';
-import 'help_feedback_page.dart';
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  String _companyName = 'Nova ADEN';
+  double _taxRate = 0.0;
+  bool _stockReminderEnabled = false;
+  int _stockReminderDays = 7;
+  bool _notificationsEnabled = true;
+
+  final _companyCtrl = TextEditingController();
+  final _taxCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrefs();
+  }
+
+  Future<void> _loadPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _companyName = prefs.getString('company_name') ?? 'Nova ADEN';
+      _companyCtrl.text = _companyName;
+      
+      _taxRate = prefs.getDouble('tax_rate') ?? 0.0;
+      _taxCtrl.text = _taxRate.toStringAsFixed(1);
+      
+      _stockReminderEnabled = prefs.getBool('stock_reminder_enabled') ?? false;
+      _stockReminderDays = prefs.getInt('stock_reminder_days') ?? 7;
+      _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
+    });
+  }
+
+  Future<void> _savePref(String key, dynamic value) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (value is String) await prefs.setString(key, value);
+    if (value is double) await prefs.setDouble(key, value);
+    if (value is bool) await prefs.setBool(key, value);
+    if (value is int) await prefs.setInt(key, value);
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _companyCtrl.dispose();
+    _taxCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, theme, _) => Scaffold(
-        appBar: AppBar(title: const Text('Configuración'), centerTitle: true),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Modo Claro / Oscuro
-            _buildSwitchCard(
-              icon: theme.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-              title: theme.isDarkMode ? 'Modo Claro' : 'Modo Oscuro',
-              subtitle: 'Cambia entre temas instantáneamente',
-              value: theme.isDarkMode,
-              onChanged: (_) => theme.toggleTheme(),
-            ),
-            const SizedBox(height: 24),
-            
-            // ✅ SECCIÓN GENERAL
-            _buildSectionTitle(context, 'General'),
-            _buildSettingsCard(
-              context: context,
-              icon: Icons.business,
-              title: 'Nombre de empresa',
-              subtitle: 'Nova ADEN (por defecto)',
-              onTap: () {},
-            ),
-            const SizedBox(height: 12),
-            _buildSettingsCard(
-              context: context,
-              icon: Icons.currency_exchange,
-              title: 'Monedas y Tasas',
-              subtitle: 'Configurar CUP, MLC, USD',
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CurrencySettingsPage())),
-            ),
-            _buildSettingsCard(
-              context: context,
-              icon: Icons.backup,
-              title: 'Respaldos',
-              subtitle: 'Crear o restaurar copias',
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupPage())),
-            ),
-            _buildSettingsCard(
-              context: context,
-              icon: Icons.note,
-              title: 'Notas Diarias',
-              subtitle: 'Registrar notas del día',
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotesPage())),
-            ),
-            const SizedBox(height: 24),
-            
-            // ✅ SECCIÓN REPORTES Y OPERACIONES
-            _buildSectionTitle(context, 'Reportes y Operaciones'),
-            _buildInputCard(
-              context: context,
-              icon: Icons.title,
-              title: 'Cabecera de Reportes',
-              subtitle: 'Texto que aparece en reportes',
-              hintText: 'Ej: Mi Negocio S.A.',
-              initialValue: 'Nova ADEN - Reporte',
-              onChanged: (v) {},
-            ),
-            const SizedBox(height: 12),
-            _buildSettingsCard(
-              context: context,
-              icon: Icons.receipt_long,
-              title: 'Impuesto predeterminado',
-              subtitle: '0% (por defecto)',
-              onTap: () {},
-            ),
-            const SizedBox(height: 12),
-            _buildNumberCard(
-              context: context,
-              icon: Icons.lock,
-              title: 'Bloquear operaciones >',
-              subtitle: 'Días para bloquear edición',
-              suffix: 'días',
-              initialValue: '30',
-              onChanged: (v) {},
-            ),
-            const SizedBox(height: 24),
-            
-            // ✅ SECCIÓN INVENTARIO
-            _buildSectionTitle(context, 'Inventario'),
-            _buildNumberCard(
-              context: context,
-              icon: Icons.warning,
-              title: 'Alerta de Stock Crítico',
-              subtitle: 'Alertar cuando stock <= valor',
-              suffix: 'unid.',
-              initialValue: '5',
-              onChanged: (v) {},
-            ),
-            const SizedBox(height: 12),
-            _buildSwitchCard(
-              icon: Icons.inventory_2,
-              title: 'Recordatorios de stock',
-              subtitle: 'Cada 7 días',
-              value: false,
-              onChanged: (_) {},
-            ),
-            const SizedBox(height: 24),
-            
-            // ✅ SECCIÓN SISTEMA
-            _buildSectionTitle(context, 'Sistema'),
-            _buildSwitchCard(
-              icon: Icons.notifications,
-              title: 'Notificaciones',
-              subtitle: 'Alertas de stock bajo',
-              value: true,
-              onChanged: (_) {},
-            ),
-            const SizedBox(height: 24),
-            _buildSettingsCard(
-              context: context,
-              icon: Icons.help,
-              title: 'Ayuda y Feedback',
-              subtitle: 'Preguntas frecuentes y sugerencias',
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpFeedbackPage())),
-            ),
-            _buildSettingsCard(
-              context: context,
-              icon: Icons.info,
-              title: 'Acerca de',
-              subtitle: 'Versión 1.0.0',
-              onTap: () => _showAboutDialog(context),
-            ),
-          ],
-        ),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Configuración'), centerTitle: true),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Tema
+          Card(child: SwitchListTile(
+            secondary: Icon(Provider.of<ThemeProvider>(context).isDarkMode ? Icons.light_mode : Icons.dark_mode, color: Colors.blue),
+            title: Text(Provider.of<ThemeProvider>(context).isDarkMode ? 'Modo Claro' : 'Modo Oscuro'),
+            subtitle: const Text('Cambia el tema de la aplicación'),
+            value: Provider.of<ThemeProvider>(context).isDarkMode,
+            onChanged: (v) => Provider.of<ThemeProvider>(context, listen: false).toggleTheme(),
+          )),
+          const SizedBox(height: 24),
+          
+          // GENERAL
+          const Text('General', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Card(child: ListTile(
+            leading: const Icon(Icons.business, color: Colors.blue),
+            title: const Text('Nombre de empresa'),
+            subtitle: Text(_companyName),
+            onTap: () => _editField('company_name', _companyCtrl),
+          )),
+          const SizedBox(height: 16),
+          
+          // REPORTES
+          const Text('Reportes y Operaciones', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Card(child: ListTile(
+            leading: const Icon(Icons.receipt_long, color: Colors.green),
+            title: const Text('Impuesto predeterminado'),
+            subtitle: Text('${_taxRate.toStringAsFixed(1)}%'),
+            onTap: () => _editField('tax_rate', _taxCtrl),
+          )),
+          const SizedBox(height: 16),
+          
+          // INVENTARIO
+          const Text('Inventario', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Card(child: SwitchListTile(
+            secondary: const Icon(Icons.inventory_2, color: Colors.purple),
+            title: const Text('Recordatorios de stock'),
+            subtitle: Text('Cada $_stockReminderDays días'),
+            value: _stockReminderEnabled,
+            onChanged: (v) {
+              setState(() => _stockReminderEnabled = v);
+              _savePref('stock_reminder_enabled', v);
+              if (v) {
+                showDialog(context: context, builder: (_) => AlertDialog(
+                  title: const Text('Frecuencia'),
+                  content: DropdownButton<int>(
+                    value: _stockReminderDays,
+                    items: [3, 7, 15, 30].map((d) => DropdownMenuItem(value: d, child: Text('$d días'))).toList(),
+                    onChanged: (nv) { setState(() => _stockReminderDays = nv!); _savePref('stock_reminder_days', nv); },
+                  ),
+                  actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Listo'))],
+                ));
+              }
+            },
+          )),
+          const SizedBox(height: 16),
+          
+          // SISTEMA
+          const Text('Sistema', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Card(child: SwitchListTile(
+            secondary: const Icon(Icons.notifications_active, color: Colors.purple),
+            title: const Text('Notificaciones'),
+            subtitle: const Text('Alertas de stock bajo'),
+            value: _notificationsEnabled,
+            onChanged: (v) { setState(() => _notificationsEnabled = v); _savePref('notifications_enabled', v); },
+          )),
+          const SizedBox(height: 24),
+          const Center(child: Text('Nova ADEN v1.0.0', style: TextStyle(color: Colors.grey))),
+        ],
       ),
     );
   }
 
-  Widget _buildSectionTitle(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12, left: 4),
-      child: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
-    );
-  }
-
-  Widget _buildSettingsCard({required BuildContext context, required IconData icon, required String title, required String subtitle, required VoidCallback onTap}) {
-    return Card(elevation: 2, margin: const EdgeInsets.only(bottom: 8), child: ListTile(
-      leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1), child: Icon(icon, color: Theme.of(context).colorScheme.primary)),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Text(subtitle),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: onTap,
-    ));
-  }
-
-  Widget _buildInputCard({required BuildContext context, required IconData icon, required String title, required String subtitle, required String hintText, required String initialValue, required ValueChanged<String> onChanged}) {
-    return Card(elevation: 2, margin: const EdgeInsets.only(bottom: 8), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1), child: Icon(icon, color: Theme.of(context).colorScheme.primary)), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)), Text(subtitle, style: TextStyle(color: Colors.grey[600], fontSize: 12))]))]),
-      const SizedBox(height: 12),
-      TextField(decoration: InputDecoration(hintText: hintText, border: const OutlineInputBorder()), controller: TextEditingController(text: initialValue), onChanged: onChanged),
-    ])));
-  }
-
-  Widget _buildNumberCard({required BuildContext context, required IconData icon, required String title, required String subtitle, required String suffix, required String initialValue, required ValueChanged<String> onChanged}) {
-    return Card(elevation: 2, margin: const EdgeInsets.only(bottom: 8), child: Padding(padding: const EdgeInsets.all(16), child: Row(children: [
-      CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1), child: Icon(icon, color: Theme.of(context).colorScheme.primary)),
-      const SizedBox(width: 12),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)), Text(subtitle, style: TextStyle(color: Colors.grey[600], fontSize: 12))])),
-      SizedBox(width: 100, child: TextField(keyboardType: TextInputType.number, decoration: InputDecoration(suffixText: suffix, border: const OutlineInputBorder()), controller: TextEditingController(text: initialValue), onChanged: onChanged)),
-    ])));
-  }
-
-  Widget _buildSwitchCard({required IconData icon, required String title, required String subtitle, required bool value, required ValueChanged<bool?> onChanged}) {
-    return Card(elevation: 2, margin: const EdgeInsets.only(bottom: 8), child: SwitchListTile(
-      secondary: CircleAvatar(backgroundColor: Colors.blue.withOpacity(0.1), child: Icon(icon, color: Colors.blue)),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Text(subtitle),
-      value: value,
-      onChanged: onChanged,
-    ));
-  }
-
-  void _showAboutDialog(BuildContext context) {
-    showDialog(context: context, builder: (ctx) => AlertDialog(
-      title: const Text('Nova ADEN'),
-      content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Versión: 1.0.0'),
-        const SizedBox(height: 8),
-        const Text('Administrador de Negocios'),
-        const SizedBox(height: 8),
-        const Text('Desarrollado con Flutter & Dart'),
-        const SizedBox(height: 16),
-        const Text('© 2026 Todos los derechos reservados.'),
-      ]),
-      actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar'))],
+  void _editField(String key, TextEditingController ctrl) {
+    showDialog(context: context, builder: (_) => AlertDialog(
+      title: Text(key == 'company_name' ? 'Nombre de Empresa' : 'Impuesto %'),
+      content: TextField(controller: ctrl, keyboardType: key == 'tax_rate' ? TextInputType.number : TextInputType.text),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        ElevatedButton(onPressed: () {
+          final val = key == 'tax_rate' ? (double.tryParse(ctrl.text) ?? 0.0) : ctrl.text.trim();
+          _savePref(key, val);
+          Navigator.pop(context);
+        }, child: const Text('Guardar')),
+      ],
     ));
   }
 }
