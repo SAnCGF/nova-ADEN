@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:printing/printing.dart';
 import 'dart:convert';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../core/models/product.dart';
 import '../../core/models/customer.dart';
 import '../../core/models/sale.dart';
@@ -48,8 +46,8 @@ class _PosPageState extends State<PosPage> {
     super.initState();
     _loadData();
   }
-  @override
-  void dispose() {
+
+  @override  void dispose() {
     _searchController.dispose();
     _barcodeController.dispose();
     super.dispose();
@@ -96,9 +94,9 @@ class _PosPageState extends State<PosPage> {
 
   void _showBarcodeScanner() {
     showDialog(
-      context: context,      builder: (ctx) => AlertDialog(
-        title: const Text('📷 Escanear Código de Barras'),
-        content: Column(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('📷 Escanear Código de Barras'),        content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text('Ingrese el código manualmente o use el escáner:', style: TextStyle(fontSize: 14)),
@@ -145,9 +143,9 @@ class _PosPageState extends State<PosPage> {
       return;
     }
     setState(() {
-      final idx = _cart.indexWhere((c) => c.productoId == product.id);      if (idx >= 0) {
-        if (_cart[idx].cantidad < product.stockActual) {
-          _cart[idx].cantidad++;
+      final idx = _cart.indexWhere((c) => c.productoId == product.id);
+      if (idx >= 0) {
+        if (_cart[idx].cantidad < product.stockActual) {          _cart[idx].cantidad++;
         }
       } else {
         _cart.add(CartItem(
@@ -194,9 +192,9 @@ class _PosPageState extends State<PosPage> {
     if (_cart.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('⚠️ Agrega productos'), backgroundColor: Colors.orange),
-      );      return;
-    }
-    final name = await showDialog<String>(
+      );
+      return;
+    }    final name = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('⏸️ Pausar Venta'),
@@ -242,18 +240,16 @@ class _PosPageState extends State<PosPage> {
     }
   }
 
-  // ✅ NUEVO: Generar y compartir PDF del ticket
-  Future<void> _generateAndShareReceipt() async {    if (_lastSaleId == null) return;
-
+  // ✅ NUEVO: Generar ticket PDF usando el método existente de PdfGenerator
+  Future<void> _generateAndShareReceipt() async {
+    if (_lastSaleId == null) return;
     try {
-      // Mostrar indicador de carga
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (ctx) => const Center(child: CircularProgressIndicator()),
       );
 
-      // Obtener datos de la última venta
       final sale = await _saleRepo.getSaleById(_lastSaleId!);
       if (sale == null) {
         Navigator.pop(context);
@@ -263,51 +259,12 @@ class _PosPageState extends State<PosPage> {
         return;
       }
 
-      // Obtener detalles de la venta
       final saleLines = await _saleRepo.getSaleLines(sale.id!);
       
-      // Obtener cliente si existe
-      Customer? customer;
-      if (sale.clienteId != null) {
-        customer = await _customerRepo.getCustomerById(sale.clienteId!);
-      }
-
-      // Generar PDF
-      final pdfGenerator = PdfGenerator();
-      final pdfBytes = await pdfGenerator.generateReceiptPdf(
-        saleNumber: sale.id!,
-        date: DateTime.parse(sale.fechaVenta),
-        customer: customer,
-        items: saleLines,
-        subtotal: sale.total,
-        discount: _discountAmountCUP,
-        total: sale.total,
-        amountPaid: sale.montoPagado,
-        change: sale.montoPagado - sale.total,
-        currency: _selectedCurrency,
-        isCredit: sale.montoPendiente > 0,
-        pendingAmount: sale.montoPendiente,
-      );
-
       Navigator.pop(context);
 
-      // Guardar PDF en archivo temporal
-      final directory = await getTemporaryDirectory();      final filePath = '${directory.path}/ticket_${sale.id}_${DateTime.now().millisecondsSinceEpoch}.pdf';
-      final file = File(filePath);
-      await file.writeAsBytes(pdfBytes);
-
-      // Compartir PDF
-      await Share.shareXFiles(
-        [XFile(filePath)],
-        subject: 'Ticket de Venta #${sale.id}',
-        text: 'Ticket de venta Nova ADEN #${sale.id}',
-      );
-
-      // Limpiar archivo temporal después de compartir
-      await Future.delayed(const Duration(seconds: 2));
-      if (await file.exists()) {
-        await file.delete();
-      }
+      // Usar el método estático existente que abre el diálogo nativo de compartir
+      await PdfGenerator.generateSaleTicket(sale, saleLines);
 
     } catch (e) {
       if (mounted) Navigator.pop(context);
@@ -335,32 +292,33 @@ class _PosPageState extends State<PosPage> {
       // Validar pago si no es crédito
       if (!_isCredit && paidCUP < totalCUP) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('⚠️ Pago insuficiente'), backgroundColor: Colors.orange),
-        );
+          SnackBar(content: Text('⚠️ Pago insuficiente'), backgroundColor: Colors.orange),        );
         return;
       }
 
-      // ✅ Convertir CartItem → SaleLine (con los parámetros que espera el repo)
-      final saleLines = _cart.map((item) => SaleLine(        ventaId: 0, // El repo asigna el ID real después de insertar la venta
+      // Convertir CartItem → SaleLine
+      final saleLines = _cart.map((item) => SaleLine(
+        ventaId: 0,
         productoId: item.productoId,
         cantidad: item.cantidad,
-        precioUnitario: item.precioCUP, // Precio unitario en CUP
-        subtotal: item.subtotalCUP,     // Subtotal en CUP
+        precioUnitario: item.precioCUP,
+        subtotal: item.subtotalCUP,
       )).toList();
 
-      // ✅ Guardar venta con los 8 parámetros POSICIONALES que espera createSale
-      _lastSaleId = await _saleRepo.createSale(
-        _selectedCustomer?.id,                              // 1: clienteId
-        saleLines,                                          // 2: List<SaleLine> (NO JSON)
-        totalCUP,                                           // 3: total en CUP
-        paidCUP,                                            // 4: montoPagado en CUP
-        _isCredit ? (totalCUP - paidCUP) : 0.0,            // 5: montoPendiente
-        _isCredit ? 'Venta fiada' : null,                  // 6: notasCredito
-        _selectedCurrency,                                  // 7: moneda de visualización
-        _selectedCurrency == 'MLC' ? _mlcRate : (_selectedCurrency == 'USD' ? _usdRate : 1.0), // 8: tasaCambio
+      // Guardar venta y capturar el ID retornado
+      final saleId = await _saleRepo.createSale(
+        _selectedCustomer?.id,
+        saleLines,
+        totalCUP,
+        paidCUP,
+        _isCredit ? (totalCUP - paidCUP) : 0.0,
+        _isCredit ? 'Venta fiada' : null,
+        _selectedCurrency,
+        _selectedCurrency == 'MLC' ? _mlcRate : (_selectedCurrency == 'USD' ? _usdRate : 1.0),
       );
 
-      // ✅ El repositorio YA actualiza el stock automáticamente (no hay que hacerlo aquí)
+      // Guardar el ID para posible generación de PDF
+      _lastSaleId = saleId is int ? saleId : null;
 
       // Feedback al usuario
       ScaffoldMessenger.of(context).showSnackBar(
@@ -371,7 +329,7 @@ class _PosPageState extends State<PosPage> {
         ),
       );
 
-      // ✅ NUEVO: Preguntar si desea generar el ticket PDF
+      // Preguntar si desea generar el ticket PDF
       if (mounted) {
         final shouldGeneratePdf = await showDialog<bool>(
           context: context,
@@ -383,15 +341,15 @@ class _PosPageState extends State<PosPage> {
                 onPressed: () => Navigator.pop(ctx, false),
                 child: const Text('No'),
               ),
-              ElevatedButton.icon(
-                onPressed: () => Navigator.pop(ctx, true),
+              ElevatedButton.icon(                onPressed: () => Navigator.pop(ctx, true),
                 icon: const Icon(Icons.picture_as_pdf),
                 label: const Text('Generar PDF'),
               ),
             ],
           ),
         );
-        if (shouldGeneratePdf == true) {
+
+        if (shouldGeneratePdf == true && mounted) {
           await _generateAndShareReceipt();
         }
       }
@@ -432,14 +390,13 @@ class _PosPageState extends State<PosPage> {
               const SizedBox(height: 8),
               TextField(controller: tc, decoration: const InputDecoration(labelText: 'Teléfono ', border: OutlineInputBorder())),
             ],
-          ),
-        ),
+          ),        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () async {
-              // Teléfono ya no es obligatorio
-              if (nc.text.isEmpty || cc.text.isEmpty) {                ScaffoldMessenger.of(context).showSnackBar(
+              if (nc.text.isEmpty || cc.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('⚠️ Complete campos'), backgroundColor: Colors.orange),
                 );
                 return;
@@ -482,13 +439,13 @@ class _PosPageState extends State<PosPage> {
               Expanded(child: _buildCartContent(scrollController, setModalState)),
             ],
           ),
-        ),
-      ),
+        ),      ),
     );
   }
 
   Widget _buildCartHeader(Function setModalState, BuildContext ctx) {
-    return Container(      padding: const EdgeInsets.all(16),
+    return Container(
+      padding: const EdgeInsets.all(16),
       color: Colors.blue,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -531,12 +488,12 @@ class _PosPageState extends State<PosPage> {
             const Padding(padding: EdgeInsets.all(32), child: Center(child: Text('Carrito vacío', style: TextStyle(fontSize: 16, color: Colors.grey))))
           else
             _buildCartItems(setModalState),
-          _buildDiscountSection(setModalState),
-          _buildPaymentSection(setModalState),
+          _buildDiscountSection(setModalState),          _buildPaymentSection(setModalState),
         ],
       ),
     );
   }
+
   Widget _buildCustomerSection(Function setModalState) {
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -580,13 +537,13 @@ class _PosPageState extends State<PosPage> {
               backgroundColor: Colors.blue,
               child: Text('${c.cantidad}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
-            title: Text(c.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_convert(c.precioCUP).toStringAsFixed(2)} c/u'),
+            title: Text(c.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),            subtitle: Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_convert(c.precioCUP).toStringAsFixed(2)} c/u'),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(icon: const Icon(Icons.remove_circle, color: Colors.red, size: 28), onPressed: () { _decreaseQuantity(i); setModalState(() {}); }),
-                Text('${c.cantidad}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),                IconButton(icon: const Icon(Icons.add_circle, color: Colors.green, size: 28), onPressed: () { _increaseQuantity(i); setModalState(() {}); }),
+                Text('${c.cantidad}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                IconButton(icon: const Icon(Icons.add_circle, color: Colors.green, size: 28), onPressed: () { _increaseQuantity(i); setModalState(() {}); }),
                 IconButton(icon: const Icon(Icons.delete_forever, color: Colors.red), onPressed: () { _removeFromCart(i); setModalState(() {}); }),
               ],
             ),
@@ -629,13 +586,13 @@ class _PosPageState extends State<PosPage> {
                       max: 50,
                       divisions: 10,
                       label: '${_discountPercent.toInt()}%',
-                      onChanged: (v) {
-                        setModalState(() => _discountPercent = v);
+                      onChanged: (v) {                        setModalState(() => _discountPercent = v);
                         setState(() => _discountPercent = v);
                       },
                     ),
                   ),
-                  Text('${_discountPercent.toInt()}%', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),                ],
+                  Text('${_discountPercent.toInt()}%', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ],
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -678,13 +635,13 @@ class _PosPageState extends State<PosPage> {
             ),
           ]),
           const SizedBox(height: 12),
-          const Divider(),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          const Divider(),          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text('Pagado:', style: TextStyle(fontSize: 16, color: Colors.grey[700])),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: TextField(
-                keyboardType: TextInputType.numberWithOptions(decimal: true),                decoration: InputDecoration(
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
                   labelText: 'Monto Pagado',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                   prefixIcon: const Icon(Icons.payments, color: Colors.blue),
@@ -727,13 +684,13 @@ class _PosPageState extends State<PosPage> {
             child: ElevatedButton.icon(
               onPressed: _cart.isEmpty ? null : _completeSale,
               icon: const Icon(Icons.check_circle, size: 26),
-              label: const Text('CONFIRMAR VENTA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
+              label: const Text('CONFIRMAR VENTA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),              style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.all(16),
-              ),            ),
+              ),
+            ),
           ),
         ],
       ),
@@ -776,13 +733,13 @@ class _PosPageState extends State<PosPage> {
           : Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: TextField(
+                  padding: const EdgeInsets.all(16),                  child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
                       hintText: 'Buscar por código o nombre...',
                       prefixIcon: const Icon(Icons.search),
-                      border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),                      filled: true,
+                      border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                      filled: true,
                       fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100],
                       hintStyle: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.green[300] : Colors.grey),
                     ),
@@ -825,13 +782,13 @@ class _PosPageState extends State<PosPage> {
                   ),
                 ),
                 if (_cart.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(16),
+                  Container(                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: const Offset(0, -2))],
                     ),
-                    child: Column(                      mainAxisSize: MainAxisSize.min,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Row(
                           children: [
@@ -874,13 +831,13 @@ class _PosPageState extends State<PosPage> {
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                          ],                        ),
                       ],
                     ),
                   ),
               ],
-            ),    );
+            ),
+    );
   }
 }
 
