@@ -24,7 +24,6 @@ class _PurchasePageState extends State<PurchasePage> {
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
   
-  // Carrito: productId -> {cantidad, costoUnitario}
   final Map<int, Map<String, dynamic>> _cart = {};
   bool _isQuickPurchase = false;
 
@@ -74,26 +73,10 @@ class _PurchasePageState extends State<PurchasePage> {
     });
   }
 
-  void _removeFromCart(int productId) {
-    setState(() => _cart.remove(productId));
-  }
-
   double get _cartTotal {
     return _cart.values.fold(0.0, (sum, item) {
       return sum + (item['cantidad'] * item['costoUnitario']);
     });
-  }
-
-  double _calculateWeightedAverageCost(int productId, double newCost, int newQty) {
-    final product = _products.firstWhere((p) => p.id == productId, orElse: () => _products.first);
-    final currentStock = product.stockActual;
-    final currentCost = product.costo ?? 0.0;
-    
-    if (currentStock == 0) return newCost;
-    
-    final totalCost = (currentCost * currentStock) + (newCost * newQty);
-    final totalQty = currentStock + newQty;
-    return totalCost / totalQty;
   }
 
   Future<void> _confirmPurchase() async {
@@ -126,7 +109,6 @@ class _PurchasePageState extends State<PurchasePage> {
         final cantidad = item['cantidad'] as int;
         final costoUnitario = item['costoUnitario'] as double;
         
-        // ✅ CORREGIDO: costo_unitario → precio_unitario
         await db.insert('compra_detalles', {
           'compra_id': purchaseId,
           'producto_id': productId,
@@ -135,15 +117,14 @@ class _PurchasePageState extends State<PurchasePage> {
           'subtotal': cantidad * costoUnitario,
         });
         
-        final newAvgCost = _calculateWeightedAverageCost(productId, costoUnitario, cantidad);
         await db.rawUpdate(
           'UPDATE productos SET stock_actual = stock_actual + ?, costo = ? WHERE id = ?',
-          [cantidad, newAvgCost, productId],
+          [cantidad, costoUnitario, productId],
         );
       }
       
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Compra registrada y stock actualizado'), backgroundColor: Colors.green),
+        const SnackBar(content: Text('✅ Compra registrada'), backgroundColor: Colors.green),
       );
       
       setState(() => _cart.clear());
@@ -156,45 +137,6 @@ class _PurchasePageState extends State<PurchasePage> {
     }
   }
 
-  Future<void> _showPurchaseHistory() async {
-    final db = await DatabaseHelper.instance.database;
-    final purchases = await db.rawQuery('''
-      SELECT c.id, c.fecha, c.total, p.nombre as proveedor
-      FROM compras c
-      LEFT JOIN proveedores p ON c.proveedor_id = p.id
-      ORDER BY c.fecha DESC
-    ''');
-    
-    if (!mounted) return;
-    
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('📋 Historial de Compras'),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 400,
-          child: purchases.isEmpty
-              ? const Center(child: Text('Sin compras registradas'))
-              : ListView.builder(
-                  itemCount: purchases.length,
-                  itemBuilder: (ctx, i) {
-                    final p = purchases[i];
-                    return ListTile(
-                      title: Text('Compra #${p['id']}'),
-                      subtitle: Text('${p['proveedor'] ?? 'Rápida'} - ${DateFormat('dd/MM/yyyy').format(DateTime.parse(p['fecha'] as String))}'),
-                      trailing: Text('\$${(p['total'] as num).toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    );
-                  },
-                ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -202,11 +144,6 @@ class _PurchasePageState extends State<PurchasePage> {
         title: const Text('Compras'),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: _showPurchaseHistory,
-            tooltip: 'Historial',
-          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadData,
