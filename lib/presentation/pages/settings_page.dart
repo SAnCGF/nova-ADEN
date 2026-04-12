@@ -8,7 +8,7 @@ import 'notes_page.dart';
 import 'help_feedback_page.dart';
 
 class SettingsPage extends StatelessWidget {
-  SettingsPage({super.key});
+  const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +18,7 @@ class SettingsPage extends StatelessWidget {
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // Modo Claro / Oscuro
             _buildSwitchCard(
               icon: theme.isDarkMode ? Icons.light_mode : Icons.dark_mode,
               title: theme.isDarkMode ? 'Modo Claro' : 'Modo Oscuro',
@@ -26,7 +27,17 @@ class SettingsPage extends StatelessWidget {
               onChanged: (_) => theme.toggleTheme(),
             ),
             const SizedBox(height: 24),
+            
+            // ✅ SECCIÓN GENERAL
             _buildSectionTitle(context, 'General'),
+            _buildSettingsCard(
+              context: context,
+              icon: Icons.business,
+              title: 'Nombre de empresa',
+              subtitle: 'Nova ADEN (por defecto)',
+              onTap: () {},
+            ),
+            const SizedBox(height: 12),
             _buildSettingsCard(
               context: context,
               icon: Icons.currency_exchange,
@@ -49,6 +60,8 @@ class SettingsPage extends StatelessWidget {
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotesPage())),
             ),
             const SizedBox(height: 24),
+            
+            // ✅ SECCIÓN REPORTES Y OPERACIONES
             _buildSectionTitle(context, 'Reportes y Operaciones'),
             _buildInputCard(
               context: context,
@@ -60,14 +73,12 @@ class SettingsPage extends StatelessWidget {
               onChanged: (v) {},
             ),
             const SizedBox(height: 12),
-            _buildNumberCard(
+            _buildSettingsCard(
               context: context,
-              icon: Icons.percent,
-              title: 'Impuesto %',
-              subtitle: 'Impuesto básico para ventas',
-              suffix: '%',
-              initialValue: '0.0',
-              onChanged: (v) {},
+              icon: Icons.receipt_long,
+              title: 'Impuesto predeterminado',
+              subtitle: '0% (por defecto)',
+              onTap: () {},
             ),
             const SizedBox(height: 12),
             _buildNumberCard(
@@ -80,6 +91,8 @@ class SettingsPage extends StatelessWidget {
               onChanged: (v) {},
             ),
             const SizedBox(height: 24),
+            
+            // ✅ SECCIÓN INVENTARIO
             _buildSectionTitle(context, 'Inventario'),
             _buildNumberCard(
               context: context,
@@ -90,7 +103,17 @@ class SettingsPage extends StatelessWidget {
               initialValue: '5',
               onChanged: (v) {},
             ),
+            const SizedBox(height: 12),
+            _buildSwitchCard(
+              icon: Icons.inventory_2,
+              title: 'Recordatorios de stock',
+              subtitle: 'Cada 7 días',
+              value: false,
+              onChanged: (_) {},
+            ),
             const SizedBox(height: 24),
+            
+            // ✅ SECCIÓN SISTEMA
             _buildSectionTitle(context, 'Sistema'),
             _buildSwitchCard(
               icon: Icons.notifications,
@@ -114,62 +137,6 @@ class SettingsPage extends StatelessWidget {
               subtitle: 'Versión 1.0.0',
               onTap: () => _showAboutDialog(context),
             ),
-          const Divider(height: 24),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Text('Configuración Avanzada (RF)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-          ),
-          ListTile(
-            leading: Icon(Icons.business, color: Colors.blue),
-            title: Text('RF 66: Nombre de empresa'),
-            subtitle: Text('Nova ADEN (por defecto)'),
-            onTap: () {},
-          ),
-          ListTile(
-            leading: Icon(Icons.receipt_long, color: Colors.green),
-            title: Text('RF 65: Impuesto predeterminado'),
-            subtitle: Text('0% (por defecto)'),
-            onTap: () {},
-          ),
-          SwitchListTile(
-            secondary: Icon(Icons.inventory_2, color: Colors.orange),
-            title: Text('RF 68: Recordatorios de stock'),
-            subtitle: Text('Cada 7 días'),
-            value: false,
-            onChanged: (v) {},
-          ),
-        const Divider(height: 24),
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text('General', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
-        ),
-        ListTile(
-          leading: const Icon(Icons.business, color: Colors.blue),
-          title: const Text('Nombre de empresa'),
-          subtitle: const Text('Nova ADEN (por defecto)'),
-          onTap: () {},
-        ),
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text('Inventario', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
-        ),
-        SwitchListTile(
-          secondary: const Icon(Icons.inventory_2, color: Colors.orange),
-          title: const Text('Recordatorios de stock'),
-          subtitle: const Text('Cada 7 días'),
-          value: false,
-          onChanged: (v) {},
-        ),
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text('Reportes y Operaciones', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
-        ),
-        ListTile(
-          leading: const Icon(Icons.receipt_long, color: Colors.green),
-          title: const Text('Impuesto predeterminado'),
-          subtitle: const Text('0% (por defecto)'),
-          onTap: () {},
-        ),
           ],
         ),
       ),
@@ -235,11 +202,4 @@ class SettingsPage extends StatelessWidget {
       actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar'))],
     ));
   }
-  // RF 68: Recordatorios de stock
-  bool _recordatorioStock = false;
-  int _diasRecordatorio = 7;
-  // RF 65: Impuestos
-  double _impuestoPredeterminado = 0.0;
-  // RF 66: Cabecera
-  TextEditingController _nombreEmpresaCtrl = TextEditingController();
 }
