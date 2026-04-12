@@ -126,8 +126,7 @@ class DatabaseHelper {
         FOREIGN KEY (proveedor_id) REFERENCES proveedores (id)
       )
     ''');
-
-    // Tabla: Detalles de Compra
+  // Tabla: Detalles de Compra
     await db.execute('''
       CREATE TABLE compra_detalles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -140,7 +139,6 @@ class DatabaseHelper {
         FOREIGN KEY (producto_id) REFERENCES productos (id)
       )
     ''');
-
     // Tabla: Ventas Pausadas
     await db.execute('''
       CREATE TABLE ventas_pausadas (
