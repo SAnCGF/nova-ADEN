@@ -251,37 +251,27 @@ class _PosPageState extends State<PosPage> {
       );
       return;
     }
-    final totalCUPToPay = CurrencyHelper.convertToCUP(_total, _selectedCurrency, _mlcRate, _usdRate);
-    final paidCUP = _selectedCurrency == 'CUP' ? _amountPaid : _amountPaid * (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate);
-    if (!_isCredit && paidCUP < totalCUPToPay) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('⚠️ Pago insuficiente'), backgroundColor: Colors.orange),
-      );
-      return;
-    }
-    try {
-      final lines = _cart.map((c) => SaleLine(
-        ventaId: 0,
-        productoId: c.productoId,
-        cantidad: c.cantidad,
-        precioUnitario: c.precioCUP,
-        subtotal: c.subtotalCUP,
-      )).toList();
-      final saleId = await _saleRepo.createSale(
-        _selectedCustomer?.id,
-        lines,
-        totalCUPToPay,
-        _isCredit ? paidCUP : totalCUPToPay,
-        _isCredit ? (totalCUPToPay - paidCUP) : 0.0,
-        '',
-        _selectedCurrency,
-        _selectedCurrency == 'CUP' ? 1.0 : (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate),
-      );
-      final createdSale = await _saleRepo.getSaleById(saleId);
-      if (createdSale != null) {
-        final saleLines = await _saleRepo.getSaleLines(saleId);
-        await PdfGenerator.generateSaleTicket(createdSale, saleLines);
-      }
+   // ✅ CORRECCIÓN 1: Calcular el total en la moneda seleccionada (no CUP)
+final totalInSelectedCurrency = _selectedCurrency == 'CUP' 
+    ? _total 
+    : _total / (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate);
+
+// ✅ CORRECCIÓN 2: Calcular el monto pagado en la moneda seleccionada
+final paidInSelectedCurrency = _selectedCurrency == 'CUP' 
+    ? _amountPaid 
+    : _amountPaid / (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate);
+
+// ✅ CORRECCIÓN 3: Validar usando CUP (solo para comparación interna)
+final totalCUPToPay = _selectedCurrency == 'CUP' ? _total : _total * (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate);
+final paidCUP = _selectedCurrency == 'CUP' ? _amountPaid : _amountPaid * (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate);
+
+// ✅ CORRECCIÓN 4: Validar con CUP (correcto)
+if (!_isCredit && paidCUP < totalCUPToPay) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('⚠️ Pago insuficiente'), backgroundColor: Colors.orange),
+  );
+  return;
+}
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('✅ Venta registrada'), backgroundColor: Colors.green),
       );
@@ -313,7 +303,7 @@ class _PosPageState extends State<PosPage> {
               const SizedBox(height: 8),
               TextField(controller: cc, decoration: const InputDecoration(labelText: 'Carnet *', border: OutlineInputBorder())),
               const SizedBox(height: 8),
-              TextField(controller: tc, decoration: const InputDecoration(labelText: 'Teléfono *', border: OutlineInputBorder())),
+              TextField(controller: tc, decoration: const InputDecoration(labelText: 'Teléfono ', border: OutlineInputBorder())),
             ],
           ),
         ),
@@ -637,11 +627,7 @@ Padding(
               value: _selectedCurrency,
               dropdownColor: Theme.of(context).appBarTheme.backgroundColor,
               underline: const SizedBox(),
-              items: const [
-                DropdownMenuItem(value: 'CUP', child: Text('🇨🇺 CUP')),
-                DropdownMenuItem(value: 'MLC', child: Text('💳 MLC')),
-                DropdownMenuItem(value: 'USD', child: Text('🇺🇸 USD')),
-              ],
+             
               onChanged: (v) {
                 if (v != null) setState(() => _selectedCurrency = v);
                 _loadData();
@@ -651,7 +637,7 @@ Padding(
         ),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.qr_code_scanner), onPressed: () {}, tooltip: '📷 Escanear (RF 53)'),
+        
           IconButton(icon: const Icon(Icons.play_circle_outline), onPressed: _resumeSale, tooltip: 'Retomar venta'),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
           if (_cart.isNotEmpty) IconButton(icon: const Icon(Icons.delete_sweep), onPressed: _clearCart),
