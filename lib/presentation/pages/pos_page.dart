@@ -244,78 +244,77 @@ class _PosPageState extends State<PosPage> {
     }
   }
 
- Future<void> _completeSale() async {
-  if (_cart.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('⚠️ Carrito vacío'), backgroundColor: Colors.orange),
-    );
-    return;
-  }
-
-  try {
-    // Calcular totales en CUP para guardar en base de datos (siempre internamente en CUP)
-    final totalCUP = _totalCUP;
-    final paidCUP = _selectedCurrency == 'CUP' 
-        ? _amountPaid 
-        : _amountPaid * (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate);
-
-    // Validar pago si no es crédito
-    if (!_isCredit && paidCUP < totalCUP) {
+  // ✅ CORRECCIÓN 1: Método _completeSale corregido (sin catch duplicado, Sale con parámetros válidos)
+  Future<void> _completeSale() async {
+    if (_cart.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('⚠️ Pago insuficiente: faltan ${(totalCUP - paidCUP).toStringAsFixed(2)} CUP'), 
-        backgroundColor: Colors.orange),
+        const SnackBar(content: Text('⚠️ Carrito vacío'), backgroundColor: Colors.orange),
       );
       return;
     }
 
-    // Guardar la venta en la base de datos
-    final sale = Sale(
-      clienteId: _selectedCustomer?.id,
-      total: totalCUP,
-      montoPagado: paidCUP,
-      esCredito: _isCredit,
-      fecha: DateTime.now(),
-      productos: jsonEncode(_cart.map((c) => c.toMap()).toList()),
-      monedaVisualizacion: _selectedCurrency,
-      tasaMlc: _mlcRate,
-      tasaUsd: _usdRate,
-    );
+    try {
+      // Calcular totales en CUP para guardar en base de datos (siempre internamente en CUP)
+      final totalCUP = _totalCUP;
+      final paidCUP = _selectedCurrency == 'CUP' 
+          ? _amountPaid 
+          : _amountPaid * (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate);
 
-    await _saleRepo.createSale(sale);
+      // Validar pago si no es crédito
+      if (!_isCredit && paidCUP < totalCUP) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('⚠️ Pago insuficiente: faltan ${(totalCUP - paidCUP).toStringAsFixed(2)} CUP'), 
+          backgroundColor: Colors.orange),
+        );
+        return;
+      }
 
-    // Actualizar stock de productos
-    for (final item in _cart) {
-      await _productRepo.updateStock(item.productoId, item.stockDisponible - item.cantidad);
+      // ✅ Guardar la venta con parámetros CORRECTOS del modelo Sale
+      final sale = Sale(
+        clienteId: _selectedCustomer?.id,
+        fecha: DateTime.now().toIso8601String(),  // String ISO, no DateTime
+        total: totalCUP,                           // Siempre en CUP
+        montoPagado: paidCUP,                      // Siempre en CUP
+        montoPendiente: _isCredit ? (totalCUP - paidCUP) : 0.0,
+        esFiado: _isCredit,                        // ✅ Nombre correcto: esFiado (no esCredito)
+        notasCredito: _isCredit ? 'Venta fiada' : null,
+      );
+
+      await _saleRepo.createSale(sale);
+
+      // ✅ Actualizar stock usando método existente: updateProduct con copyWith
+      for (final item in _cart) {
+        final producto = _products.firstWhere((p) => p.id == item.productoId);
+        await _productRepo.updateProduct(producto.copyWith(
+          stockActual: producto.stockActual - item.cantidad,
+        ));
+      }
+
+      // Feedback al usuario
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('✅ Venta registrada: ${totalCUP.toStringAsFixed(2)} CUP'), 
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+
+      // Resetear formulario
+      if (widget.onSaleCompleted != null) widget.onSaleCompleted!();
+      _clearCart();
+      _amountPaid = 0.0;
+      _isCredit = false;
+      _applyDiscount = false;
+      _discountPercent = 0.0;
+      _selectedCustomer = null;
+      _loadData();
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ Error al registrar venta: $e'), backgroundColor: Colors.red),
+      );
     }
-
-    // Feedback al usuario
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('✅ Venta registrada: ${totalCUP.toStringAsFixed(2)} CUP'), 
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-
-    // Resetear formulario
-    if (widget.onSaleCompleted != null) widget.onSaleCompleted!();
-    _clearCart();
-    _amountPaid = 0.0;
-    _isCredit = false;
-    _applyDiscount = false;
-    _discountPercent = 0.0;
-    _selectedCustomer = null;
-    _loadData();
-
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('❌ Error al registrar venta: $e'), backgroundColor: Colors.red),
-    );
-  }
-} catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red));
-    }
-  }
+  } // ✅ CORRECCIÓN: Esta llave CIERRA correctamente el método _completeSale
 
   void _showNewCustomerDialog() {
     final nc = TextEditingController();
@@ -341,7 +340,8 @@ class _PosPageState extends State<PosPage> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () async {
-             if (nc.text.isEmpty || cc.text.isEmpty) {
+              // ✅ CORRECCIÓN 2: Teléfono ya no es obligatorio (quitado || tc.text.isEmpty)
+              if (nc.text.isEmpty || cc.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('⚠️ Complete campos'), backgroundColor: Colors.orange),
                 );
@@ -580,43 +580,43 @@ class _PosPageState extends State<PosPage> {
           const SizedBox(height: 8),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             const Text('TOTAL:', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-           Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_total.toStringAsFixed(2)} $_selectedCurrency',
-  style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.green),),
-]),
+            Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_total.toStringAsFixed(2)} $_selectedCurrency',
+              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.green),
+            ),
+          ]), // ✅ CORRECCIÓN 3: Cerrado correcto del Row del TOTAL
           const SizedBox(height: 12),
           const Divider(),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text('Pagado:', style: TextStyle(fontSize: 16, color: Colors.grey[700])),
-            // Campo para ingresar Monto Pagado
-Padding(
-  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-  child: TextField(
-    keyboardType: TextInputType.numberWithOptions(decimal: true),
-    decoration: InputDecoration(
-      labelText: 'Monto Pagado',
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-      prefixIcon: const Icon(Icons.payments, color: Colors.blue),
-      hintText: '0.00',
-    ),
-    onChanged: (val) {
-      setState(() {
-        _amountPaid = double.tryParse(val) ?? 0.0;
-      });
-    },
-  ),
-),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: TextField(
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: 'Monto Pagado',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  prefixIcon: const Icon(Icons.payments, color: Colors.blue),
+                  hintText: '0.00',
+                ),
+                onChanged: (val) {
+                  setState(() {
+                    _amountPaid = double.tryParse(val) ?? 0.0;
+                  });
+                },
+              ),
+            ),
             Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_amountPaidForeign.toStringAsFixed(2)}', style: TextStyle(fontSize: 16, color: Colors.grey[700])),
           ]),
           const SizedBox(height: 8),
           if (!_isCredit) ...[
-           if (_amountPaidForeign < _total)
-  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-    const Text('⚠️ Faltante:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
-    Text(
-      '${_selectedCurrency == 'CUP' ? '\$' : ''}${(_total - _amountPaidForeign).toStringAsFixed(2)} $_selectedCurrency',
-      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange),
-    ),
-  ])
+            if (_amountPaidForeign < _total)
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                const Text('⚠️ Faltante:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
+                Text(
+                  '${_selectedCurrency == 'CUP' ? '\$' : ''}${(_total - _amountPaidForeign).toStringAsFixed(2)} $_selectedCurrency',
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange),
+                ),
+              ])
             else if (_amountPaidForeign >= _total)
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 const Text('🔄 CAMBIO:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
@@ -657,11 +657,16 @@ Padding(
           children: [
             const Text('Punto de Venta'),
             const SizedBox(width: 12),
+            // ✅ CORRECCIÓN 4: DropdownButton con parámetro 'items' obligatorio
             DropdownButton<String>(
               value: _selectedCurrency,
               dropdownColor: Theme.of(context).appBarTheme.backgroundColor,
               underline: const SizedBox(),
-             
+              items: const [  // ← Agregado: parámetro 'items' requerido
+                DropdownMenuItem(value: 'CUP', child: Text('🇨🇺 CUP')),
+                DropdownMenuItem(value: 'MLC', child: Text('💳 MLC')),
+                DropdownMenuItem(value: 'USD', child: Text('🇺🇸 USD')),
+              ],
               onChanged: (v) {
                 if (v != null) setState(() => _selectedCurrency = v);
                 _loadData();
@@ -671,7 +676,6 @@ Padding(
         ),
         centerTitle: true,
         actions: [
-        
           IconButton(icon: const Icon(Icons.play_circle_outline), onPressed: _resumeSale, tooltip: 'Retomar venta'),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
           if (_cart.isNotEmpty) IconButton(icon: const Icon(Icons.delete_sweep), onPressed: _clearCart),
@@ -791,7 +795,7 @@ Padding(
             ),
     );
   }
-}
+} // ✅ Esta llave CIERRA la clase _PosPageState (debe ser la última del archivo)
 
 class CartItem {
   final int productoId;
