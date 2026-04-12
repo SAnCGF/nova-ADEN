@@ -266,6 +266,11 @@ final totalCUPToPay = _selectedCurrency == 'CUP' ? _total : _total * (_selectedC
 final paidCUP = _selectedCurrency == 'CUP' ? _amountPaid : _amountPaid * (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate);
 
 // ✅ CORRECCIÓN 4: Validar con CUP (correcto)
+final totalCUPToPay = _totalCUP;
+final paidCUP = _selectedCurrency == 'CUP' 
+    ? _amountPaid 
+    : _amountPaid * (_selectedCurrency == 'MLC' ? _mlcRate : _usdRate);
+
 if (!_isCredit && paidCUP < totalCUPToPay) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(content: Text('⚠️ Pago insuficiente'), backgroundColor: Colors.orange),
@@ -550,8 +555,10 @@ if (!_isCredit && paidCUP < totalCUPToPay) {
           const SizedBox(height: 8),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             const Text('TOTAL:', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${_total.toStringAsFixed(2)} $_selectedCurrency', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.green)),
-          ]),
+           Text(
+  '${_selectedCurrency == 'CUP' ? '\$' : ''}${_total.toStringAsFixed(2)} $_selectedCurrency',
+  style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.green),
+),
           const SizedBox(height: 12),
           const Divider(),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -578,11 +585,14 @@ Padding(
           ]),
           const SizedBox(height: 8),
           if (!_isCredit) ...[
-            if (_amountPaidForeign < _total)
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                const Text('⚠️ Faltante:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
-                Text('${_selectedCurrency == 'CUP' ? '\$' : ''}${(_total - _amountPaidForeign).toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
-              ])
+           if (_amountPaidForeign < _total)
+  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+    const Text('⚠️ Faltante:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
+    Text(
+      '${_selectedCurrency == 'CUP' ? '\$' : ''}${(_total - _amountPaidForeign).toStringAsFixed(2)} $_selectedCurrency',
+      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange),
+    ),
+  ])
             else if (_amountPaidForeign >= _total)
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 const Text('🔄 CAMBIO:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
