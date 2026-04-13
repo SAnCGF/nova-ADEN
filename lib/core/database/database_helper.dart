@@ -19,7 +19,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 4, // ✅ Actualizado para forzar migración
+      version: 4,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -36,7 +36,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // ✅ Tabla Clientes CON fecha_registro
+    // Tabla Clientes
     await db.execute('''
       CREATE TABLE clientes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -102,7 +102,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // ✅ Tabla detalle_ventas (nombre consistente)
+    // ✅ Tabla detalle_ventas (CORRECTA)
     await db.execute('''
       CREATE TABLE detalle_ventas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -173,7 +173,6 @@ class DatabaseHelper {
   }
 
   void _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Migración v1 → v2: ci_identidad en proveedores
     if (oldVersion < 2) {
       try {
         await db.execute('ALTER TABLE proveedores ADD COLUMN ci_identidad TEXT');
@@ -182,7 +181,6 @@ class DatabaseHelper {
       }
     }
     
-    // Migración v2 → v3: es_habitual en clientes
     if (oldVersion < 3) {
       try {
         await db.execute('ALTER TABLE clientes ADD COLUMN es_habitual INTEGER DEFAULT 0');
@@ -191,7 +189,6 @@ class DatabaseHelper {
       }
     }
     
-    // ✅ Migración v3 → v4: fecha_registro en clientes + tabla detalle_ventas
     if (oldVersion < 4) {
       try {
         await db.execute('ALTER TABLE clientes ADD COLUMN fecha_registro TEXT');
@@ -199,7 +196,6 @@ class DatabaseHelper {
         print('Columna fecha_registro ya existe o error: $e');
       }
       
-      // Crear tabla detalle_ventas si no existe
       try {
         await db.execute('''
           CREATE TABLE IF NOT EXISTS detalle_ventas (
