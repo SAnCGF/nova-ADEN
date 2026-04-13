@@ -176,10 +176,13 @@ class _PurchasePageState extends State<PurchasePage> {
                             context,
                             MaterialPageRoute(builder: (_) => const SupplierPage()),
                           );
-                          if (result != null && mounted) {
+                          if (result != null && result is Supplier && mounted) {
+                            await _loadData();
                             setState(() {
-                              _suppliers.add(result);
-                              _selectedSupplier = result;
+                              _selectedSupplier = _suppliers.firstWhere(
+                                (s) => s.id == result.id,
+                                orElse: () => result,
+                              );
                             });
                           }
                         },
@@ -199,19 +202,47 @@ class _PurchasePageState extends State<PurchasePage> {
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         filled: true,
                         fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100],
+                        labelStyle: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark 
+                              ? Colors.grey[400] 
+                              : null,
+                        ),
                       ),
                       items: [
                         const DropdownMenuItem(value: null, child: Text('Seleccionar proveedor')),
-                        ..._suppliers.map((s) => DropdownMenuItem(value: s.id, child: Text(s.nombre))),
+                        ..._suppliers.map((s) => DropdownMenuItem(
+                          value: s.id, 
+                          child: Text(
+                            s.nombre,
+                            style: TextStyle(
+                              color: Theme.of(context).brightness == Brightness.dark 
+                                  ? Colors.white 
+                                  : null,
+                            ),
+                          ),
+                        )),
                       ],
                       value: _selectedSupplier?.id,
                       onChanged: (int? supplierId) {
                         setState(() {
-                          _selectedSupplier = supplierId == null 
-                              ? null 
-                              : _suppliers.firstWhere((s) => s.id == supplierId, orElse: () => _suppliers.first);
+                          if (supplierId == null) {
+                            _selectedSupplier = null;
+                          } else {
+                            _selectedSupplier = _suppliers.firstWhere(
+                              (s) => s.id == supplierId,
+                              orElse: () => _suppliers.isNotEmpty ? _suppliers.first : null,
+                            );
+                          }
                         });
                       },
+                      hint: Text(
+                        'Seleccionar proveedor',
+                        style: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark 
+                              ? Colors.grey[500] 
+                              : null,
+                        ),
+                      ),
                     ),
                   ),
 
@@ -227,6 +258,16 @@ class _PurchasePageState extends State<PurchasePage> {
                       border: const OutlineInputBorder(),
                       filled: true,
                       fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.grey[100],
+                      hintStyle: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark 
+                            ? Colors.grey[500] 
+                            : Colors.grey,
+                      ),
+                    ),
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? Colors.white 
+                          : Colors.black,
                     ),
                     onChanged: (v) => setState(() {}),
                   ),
@@ -254,8 +295,23 @@ class _PurchasePageState extends State<PurchasePage> {
                             backgroundColor: Colors.blue,
                             child: const Icon(Icons.inventory_2, color: Colors.white),
                           ),
-                          title: Text(product.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text('Costo: \$${(product.costo ?? 0).toStringAsFixed(2)} | Stock: ${product.stockActual}'),
+                          title: Text(
+                            product.nombre, 
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).brightness == Brightness.dark 
+                                  ? Colors.white 
+                                  : Colors.black,
+                            ),
+                          ),
+                          subtitle: Text(
+                            'Costo: \$${(product.costo ?? 0).toStringAsFixed(2)} | Stock: ${product.stockActual}',
+                            style: TextStyle(
+                              color: Theme.of(context).brightness == Brightness.dark 
+                                  ? Colors.grey[400] 
+                                  : Colors.black54,
+                            ),
+                          ),
                           trailing: inCart
                               ? Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -264,7 +320,15 @@ class _PurchasePageState extends State<PurchasePage> {
                                       icon: const Icon(Icons.remove_circle, color: Colors.red),
                                       onPressed: () => _decreaseQty(product.id!),
                                     ),
-                                    Text('${_cart[product.id!]!['cantidad']}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                    Text('${_cart[product.id!]!['cantidad']}', 
+                                      style: TextStyle(
+                                        fontSize: 16, 
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).brightness == Brightness.dark 
+                                            ? Colors.white 
+                                            : Colors.black,
+                                      ),
+                                    ),
                                     IconButton(
                                       icon: const Icon(Icons.add_circle, color: Colors.green),
                                       onPressed: () => _increaseQty(product.id!),
@@ -285,7 +349,9 @@ class _PurchasePageState extends State<PurchasePage> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[900] : Colors.white,
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? const Color(0xFF1E1E1E) 
+                          : Colors.white,
                       boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: const Offset(0, -2))],
                     ),
                     child: Column(
@@ -294,8 +360,26 @@ class _PurchasePageState extends State<PurchasePage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('${_cart.length} productos', style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                            Text('Total: \$${_cartTotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
+                            Text(
+                              '${_cart.length} productos', 
+                              style: TextStyle(
+                                fontSize: 14, 
+                                // ✅ Texto visible en modo oscuro
+                                color: Theme.of(context).brightness == Brightness.dark 
+                                    ? Colors.grey[400] 
+                                    : Colors.grey,
+                              ),
+                            ),
+                            Text(
+                              'Total: \$${_cartTotal.toStringAsFixed(2)}', 
+                              style: TextStyle(
+                                fontSize: 20, 
+                                fontWeight: FontWeight.bold, 
+                                color: Theme.of(context).brightness == Brightness.dark 
+                                    ? Colors.green[300] 
+                                    : Colors.green,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 8),
