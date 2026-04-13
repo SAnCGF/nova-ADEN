@@ -4,41 +4,14 @@ import 'package:printing/printing.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import '../models/sale.dart';
-// ✅ ELIMINADO: import '../models/sale_line.dart'; (no existe)
-// Usamos SaleLine desde sale.dart o lo definimos localmente
-
-// ✅ Definición local de SaleLine si no existe como archivo separado
-class SaleLine {
-  final int ventaId;
-  final int productoId;
-  final int cantidad;
-  final double precioUnitario;
-  final double subtotal;
-  
-  SaleLine({
-    required this.ventaId,
-    required this.productoId,
-    required this.cantidad,
-    required this.precioUnitario,
-    required this.subtotal,
-  });
-  
-  factory SaleLine.fromMap(Map<String, dynamic> map) {
-    return SaleLine(
-      ventaId: map['venta_id'] as int? ?? 0,
-      productoId: map['producto_id'] as int? ?? 0,
-      cantidad: map['cantidad'] as int? ?? 0,
-      precioUnitario: (map['precio_unitario'] as num?)?.toDouble() ?? 0.0,
-      subtotal: (map['subtotal'] as num?)?.toDouble() ?? 0.0,
-    );
-  }
-}
+// ✅ ELIMINADO: import '../models/sale_line.dart'; (conflicto de duplicados)
+// ✅ Usamos SaleLine desde sale.dart directamente
 
 class PdfGenerator {
   // ✅ MÉTODO PRINCIPAL: Generar ticket de venta en PDF
   static Future<File?> generateSaleTicket({
     required Sale sale,
-    required List<SaleLine> lines,
+    required List<SaleLine> lines, // ✅ SaleLine viene de core/models/sale.dart
     String nombreEmpresa = 'Nova Aden',
   }) async {
     try {
@@ -76,12 +49,9 @@ class PdfGenerator {
                 
                 // Información de la venta
                 pw.Text('No. Venta: ${sale.id}'),
-                // ✅ CORREGIDO: sale.fecha ya es String o DateTime manejable
                 pw.Text('Fecha: ${_formatDate(sale.fecha)}'),
                 if (sale.clienteId != null)
                   pw.Text('Cliente ID: ${sale.clienteId}'),
-                // ✅ ELIMINADO: sale.moneda no existe en el modelo Sale
-                // pw.Text('Moneda: ${sale.moneda}'),
                 pw.SizedBox(height: 10),
                 
                 pw.Divider(),
@@ -149,7 +119,6 @@ class PdfGenerator {
                         fontWeight: pw.FontWeight.bold,
                       ),
                     ),
-                    // ✅ CORREGIDO: Sin referencia a sale.moneda
                     pw.Text(
                       '\$${sale.total.toStringAsFixed(2)}',
                       style: pw.TextStyle(
@@ -186,7 +155,7 @@ class PdfGenerator {
                 pw.Divider(),
                 pw.SizedBox(height: 10),
                 
-                // Pie - ✅ CORREGIDO: String con acentos entre comillas dobles
+                // Pie
                 pw.Center(
                   child: pw.Text(
                     'Gracias por su compra!',
@@ -195,7 +164,7 @@ class PdfGenerator {
                 ),
                 pw.SizedBox(height: 5),
                 pw.Center(
-                  // ✅ CORREGIDO: Usar comillas dobles para evitar conflicto con apóstrofes
+                  // ✅ CORREGIDO: String completo entre comillas dobles
                   child: pw.Text(
                     "nova-ADEN - Sistema de Gestion",
                     style: pw.TextStyle(fontSize: 8, color: PdfColors.grey),
@@ -226,18 +195,17 @@ class PdfGenerator {
     }
   }
 
-  // ✅ Helper: Formatear fecha - manejar String o DateTime
+  // ✅ Helper: Formatear fecha flexible (String o DateTime)
   static String _formatDate(dynamic fecha) {
     if (fecha is DateTime) {
       return '${fecha.day.toString().padLeft(2, '0')}/${fecha.month.toString().padLeft(2, '0')}/${fecha.year} ${fecha.hour.toString().padLeft(2, '0')}:${fecha.minute.toString().padLeft(2, '0')}';
     } else if (fecha is String) {
-      // Si ya es String, devolverlo o parsearlo si es necesario
       return fecha.length > 10 ? fecha.substring(0, 16) : fecha;
     }
     return DateTime.now().toString().substring(0, 16);
   }
 
-  // ✅ MÉTODO ADICIONAL: Generar catálogo de productos (para RF 47)
+  // ✅ MéTODO ADICIONAL: Generar catálogo de productos (para RF 47)
   static Future<void> generateProductCatalog(List<dynamic> products) async {
     final pdf = pw.Document();
 
@@ -248,7 +216,7 @@ class PdfGenerator {
           pw.SizedBox(height: 20),
           pw.TableHelper.fromTextArray(
             headers: ['Codigo', 'Nombre', 'Precio', 'Stock'],
-            data: products.map((p) => [
+             products.map((p) => [
               p.codigo ?? '',
               p.nombre,
               '\$${(p.precioVenta ?? 0).toStringAsFixed(2)}',
