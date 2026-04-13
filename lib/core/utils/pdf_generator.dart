@@ -5,7 +5,7 @@ import '../models/product.dart';
 import '../models/sale.dart';
 
 class PdfGenerator {
-  // ✅ MÉTODO ORIGINAL: Generar catálogo de productos (EXISTENTE - MANTENER)
+  // ✅ MÉTODO ORIGINAL: Generar catálogo de productos (MANTENIDO)
   static Future<void> generateProductCatalog(List<Product> products) async {
     final pdf = pw.Document();
 
@@ -41,8 +41,12 @@ class PdfGenerator {
     );
   }
 
-  // ✅ MÉTODO ORIGINAL: Generar ticket de venta (EXISTENTE - MANTENER)
-  static Future<void> generateSaleTicket(Sale sale, List<SaleLine> lines) async {
+  // ✅ MÉTODO CORREGIDO: Ticket de venta con nombre de empresa configurable
+  static Future<void> generateSaleTicket(
+    Sale sale, 
+    List<SaleLine> lines, {
+    String nombreEmpresa = 'Nova Aden', // ✅ Parámetro opcional con fallback
+  }) async {
     final pdf = pw.Document();
 
     pdf.addPage(
@@ -52,7 +56,13 @@ class PdfGenerator {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Center(child: pw.Text('NOVA ADEN', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold))),
+              // ✅ Usar nombre configurable o fallback a 'Nova Aden'
+              pw.Center(
+                child: pw.Text(
+                  nombreEmpresa.toUpperCase(), 
+                  style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
+                ),
+              ),
               pw.Center(child: pw.Text('Ticket de Venta')),
               pw.Divider(),
               pw.Text('Fecha: ${sale.fecha.toString().split('.')[0]}'),
