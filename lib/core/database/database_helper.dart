@@ -4,14 +4,12 @@ import 'package:path/path.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
-  final String _dbName = 'nova_aden.db';
-  static const int _dbVersion = 6;
 
   DatabaseHelper._init();
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB(_dbName);
+    _database = await _initDB('nova_aden.db');
     return _database!;
   }
 
@@ -21,18 +19,13 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: _dbVersion,
+      version: 6, // ✅ VERSIÓN v6 COMPLETA
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
-      onConfigure: (db) async {
-        await db.execute('PRAGMA journal_mode = WAL'); // ✅ Optimización
-        await db.execute('PRAGMA cache_size = -10000');
-      },
     );
   }
 
   void _createDB(Database db, int version) async {
-    // Tabla: Configuración
     await db.execute('''
       CREATE TABLE config (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,18 +35,17 @@ class DatabaseHelper {
       )
     ''');
 
-    // ✅ Tabla Clientes CON todas las columnas necesarias
     await db.execute('''
       CREATE TABLE clientes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT NOT NULL,
-        carnet_identidad TEXT,        telefono TEXT,
+        carnet_identidad TEXT,
+        telefono TEXT,
         es_habitual INTEGER DEFAULT 0,
         fecha_registro TEXT
       )
     ''');
 
-    // Tabla: Proveedores
     await db.execute('''
       CREATE TABLE proveedores (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -64,7 +56,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla: Productos
     await db.execute('''
       CREATE TABLE productos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -86,7 +77,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla: Ventas
     await db.execute('''
       CREATE TABLE ventas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -96,7 +86,8 @@ class DatabaseHelper {
         fecha TEXT NOT NULL,
         metodo_pago TEXT,
         moneda TEXT DEFAULT 'CUP',
-        tasa_cambio REAL DEFAULT 1.0,        es_fiado INTEGER DEFAULT 0,
+        tasa_cambio REAL DEFAULT 1.0,
+        es_fiado INTEGER DEFAULT 0,
         monto_pagado REAL DEFAULT 0,
         monto_pendiente REAL DEFAULT 0,
         notas_credito TEXT,
@@ -106,7 +97,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // ✅ Tabla DETALLE_VENTAS (NOMBRE COINCIDE CON CÓDIGO)
     await db.execute('''
       CREATE TABLE detalle_ventas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -120,7 +110,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla: Compras
     await db.execute('''
       CREATE TABLE compras (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -132,8 +121,8 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla: Detalles de Compra
-    await db.execute('''CREATE TABLE compra_detalles (
+    await db.execute('''
+      CREATE TABLE compra_detalles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         compra_id INTEGER NOT NULL,
         producto_id INTEGER NOT NULL,
@@ -144,7 +133,7 @@ class DatabaseHelper {
         FOREIGN KEY (producto_id) REFERENCES productos (id)
       )
     ''');
-    // Tabla: Mermas
+
     await db.execute('''
       CREATE TABLE mermas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -156,7 +145,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tabla: Ventas Pausadas
     await db.execute('''
       CREATE TABLE ventas_pausadas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -168,32 +156,29 @@ class DatabaseHelper {
       )
     ''');
 
-    // Índices para rendimiento
     await db.execute('CREATE INDEX idx_productos_codigo ON productos (codigo)');
     await db.execute('CREATE INDEX idx_ventas_fecha ON ventas (fecha)');
     await db.execute('CREATE INDEX idx_detalle_ventas_venta ON detalle_ventas (venta_id)');
   }
 
   void _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Migración v1 → v2: ci_identidad en proveedores
     if (oldVersion < 2) {
       try {
         await db.execute('ALTER TABLE proveedores ADD COLUMN ci_identidad TEXT');
-      } catch (e) { print('Columna ya existe en proveedores: $e'); }
+      } catch (e) { print('Columna ya existe: $e'); }
     }
     
-    // Migración v2 → v3: es_habitual en clientes
     if (oldVersion < 3) {
       try {
         await db.execute('ALTER TABLE clientes ADD COLUMN es_habitual INTEGER DEFAULT 0');
-      } catch (e) { print('Columna es_habitual ya existe en clientes: $e'); }
+      } catch (e) { print('Columna es_habitual ya existe: $e'); }
     }
     
-    // Migración v3 → v4: fecha_registro en clientes + crear detalle_ventas
     if (oldVersion < 4) {
       try {
         await db.execute('ALTER TABLE clientes ADD COLUMN fecha_registro TEXT');
-      } catch (e) { print('Columna fecha_registro ya existe en clientes: $e'); }      
+      } catch (e) { print('Columna fecha_registro ya existe: $e'); }
+      
       try {
         await db.execute('''
           CREATE TABLE IF NOT EXISTS detalle_ventas (
@@ -210,7 +195,6 @@ class DatabaseHelper {
       } catch (e) { print('Tabla detalle_ventas ya existe: $e'); }
     }
     
-    // Migración v4 → v5: Crear mermas si no existe
     if (oldVersion < 5) {
       try {
         await db.execute('''
@@ -226,7 +210,7 @@ class DatabaseHelper {
       } catch (e) { print('Tabla mermas ya existe: $e'); }
     }
     
-    // ✅ MIGRACIÓN CRÍTICA v5 -> v6: Asegura creación de tabla detalle_ventas
+    // ✅ MIGRACIÓN CRÍTICA v5→v6
     if (oldVersion < 6) {
       try {
         await db.execute('''
@@ -242,9 +226,12 @@ class DatabaseHelper {
           )
         ''');
       } catch (e) {
-        print('Tabla detalle_ventas ya existe o error crítico: $e');      }
+        print('Tabla detalle_ventas ya existe o error crítico: $e');
+      }
     }
-  }Future<void> updateConfig(String key, dynamic value) async {
+  }
+
+  Future<void> updateConfig(String key, dynamic value) async {
     final db = await database;
     await db.insert(
       'config',
@@ -253,40 +240,8 @@ class DatabaseHelper {
     );
   }
 
-  // ✅ CORREGIDO: Cierre seguro con reset
-  Future<bool> close() async {
-    try {
-      if (_database != null) {
-        final db = await database;
-        await db.close();
-        _database = null; // ← IMPORTANTE: Resetear conexión
-        return true;
-      }
-      return false;
-    } catch (e) {
-      print('Error al cerrar BD: $e');
-      _database = null; // ← Asegurar cleanup en error
-      return false;
-    }
+  Future close() async {
+    final db = await database;
+    db.close();
   }
-  
-  // ✅ NUEVO: Re-creación automática si DB fue cerrada
-  Future<Database> get _getCleanDatabase async {
-    if (_database == null) {
-      return database;
-    }
-    return _database!;
-  }
-  
-  // ✅ NUEVO: Método para limpiar entre navegación
-  Future<void> reset() async {
-    try {
-      if (_database != null) {
-        final db = await database;
-        await db.close();
-        _database = null;
-      }
-    } catch (e) {
-      print('Error al resetear BD: $e');
-    }
-  }}
+}
