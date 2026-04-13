@@ -921,30 +921,39 @@ class _PosPageState extends State<PosPage> {
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            Expanded(
-                              child: CheckboxListTile(
-                                title: const Text('Venta Fiada', style: TextStyle(fontWeight: FontWeight.bold)),
-                                subtitle: const Text('El cliente pagará después'),
-                                value: _isCredit,
-                                onChanged: (v) => setState(() => _isCredit = v ?? false),
-                                controlAffinity: ListTileControlAffinity.leading,
-                                contentPadding: EdgeInsets.zero,
-                                // ✅ PARÁMETROS EN INGLÉS - NO TRADUCIR:
-                                titleTextStyle: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).brightness == Brightness.dark 
-                                      ? Colors.grey[300] 
-                                      : null,
-                                ),
-                                subtitleTextStyle: TextStyle(
-                                  color: Theme.of(context).brightness == Brightness.dark 
-                                      ? Colors.grey[400] 
-                                      : null,
-                                ),
-                                activeColor: Colors.blue,
-                                checkColor: Colors.white,
-                              ),
-                            ),
+                           Expanded(
+  child: CheckboxListTile(
+    // ✅ Estiliza el título directamente en el widget Text
+    title: Text(
+      'Venta Fiada', 
+      style: TextStyle(
+        fontWeight: FontWeight.bold,
+        color: Theme.of(context).brightness == Brightness.dark 
+            ? Colors.grey[300] 
+            : Colors.black87,
+      ),
+    ),
+    // ✅ Estiliza el subtítulo directamente en el widget Text
+    subtitle: Text(
+      'El cliente pagará después',
+      style: TextStyle(
+        color: Theme.of(context).brightness == Brightness.dark 
+            ? Colors.grey[400] 
+            : Colors.black54,
+      ),
+    ),
+    value: _isCredit,
+    onChanged: (v) => setState(() => _isCredit = v ?? false),
+    controlAffinity: ListTileControlAffinity.leading,
+    contentPadding: EdgeInsets.zero,
+    activeColor: Colors.blue,
+    checkColor: Colors.white,
+    // ✅ Para modo oscuro: ajusta el color del checkbox
+    checkboxShape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(4),
+    ),
+  ),
+),
                             SizedBox(
                               width: 180,
                               height: 50,
