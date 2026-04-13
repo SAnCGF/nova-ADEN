@@ -41,7 +41,6 @@ class _PosPageState extends State<PosPage> {
   double _discountPercent = 0.0;
   int? _lastSaleId;
   
-  // ✅ Variable para nombre de empresa configurable
   String _nombreEmpresa = 'Nova Aden';
 
   @override
@@ -58,7 +57,6 @@ class _PosPageState extends State<PosPage> {
     super.dispose();
   }
 
-  // ✅ Cargar nombre de empresa desde configuración
   Future<void> _cargarConfigEmpresa() async {
     try {
       final db = await DatabaseHelper.instance.database;
@@ -328,7 +326,6 @@ class _PosPageState extends State<PosPage> {
         ),
       );
 
-      // ✅ Diálogo de confirmación PDF: Sí (izq) / No (der), centrados con separación
       if (mounted) {
         final shouldGeneratePdf = await showDialog<bool>(
           context: context,
@@ -341,7 +338,6 @@ class _PosPageState extends State<PosPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // ✅ SÍ a la izquierda
                     SizedBox(
                       width: 100,
                       child: ElevatedButton(
@@ -353,8 +349,7 @@ class _PosPageState extends State<PosPage> {
                         child: const Text('Sí'),
                       ),
                     ),
-                    const SizedBox(width: 16), // ✅ Separación entre botones
-                    // ✅ NO a la derecha
+                    const SizedBox(width: 16),
                     SizedBox(
                       width: 100,
                       child: OutlinedButton(
@@ -373,7 +368,6 @@ class _PosPageState extends State<PosPage> {
           final sale = await _saleRepo.getSaleById(_lastSaleId!);
           if (sale != null) {
             final saleLines = await _saleRepo.getSaleLines(sale.id!);
-            // ✅ Pasar nombre de empresa configurable al generador de PDF
             await PdfGenerator.generateSaleTicket(
               sale, 
               saleLines, 
@@ -645,7 +639,6 @@ class _PosPageState extends State<PosPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        // ✅ Modo oscuro: fondo blanco → gris oscuro
         color: Theme.of(context).brightness == Brightness.dark 
             ? const Color(0xFF1E1E1E) 
             : Colors.grey[100],
@@ -656,7 +649,6 @@ class _PosPageState extends State<PosPage> {
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text('Subtotal:', style: TextStyle(
               fontSize: 16,
-              // ✅ Texto visible en modo oscuro
               color: Theme.of(context).brightness == Brightness.dark 
                   ? Colors.grey[300] 
                   : Colors.black,
@@ -699,7 +691,6 @@ class _PosPageState extends State<PosPage> {
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text('Pagado:', style: TextStyle(
               fontSize: 16, 
-              // ✅ Color de texto adaptable
               color: Theme.of(context).brightness == Brightness.dark 
                   ? Colors.grey[400] 
                   : Colors.grey[700],
@@ -713,7 +704,6 @@ class _PosPageState extends State<PosPage> {
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                   prefixIcon: const Icon(Icons.payments, color: Colors.blue),
                   hintText: '0.00',
-                  // ✅ Hint visible en modo oscuro
                   hintStyle: TextStyle(
                     color: Theme.of(context).brightness == Brightness.dark 
                         ? Colors.grey[500] 
@@ -721,7 +711,6 @@ class _PosPageState extends State<PosPage> {
                   ),
                 ),
                 style: TextStyle(
-                  // ✅ Texto del input visible en modo oscuro
                   color: Theme.of(context).brightness == Brightness.dark 
                       ? Colors.white 
                       : Colors.black,
@@ -855,7 +844,6 @@ class _PosPageState extends State<PosPage> {
                           title: Text(p.nombre, style: TextStyle(
                             fontWeight: FontWeight.bold, 
                             fontSize: 16,
-                            // ✅ Título visible en modo oscuro
                             color: Theme.of(context).brightness == Brightness.dark 
                                 ? Colors.white 
                                 : Colors.black,
@@ -893,7 +881,6 @@ class _PosPageState extends State<PosPage> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      // ✅ Fondo adaptable: blanco → gris oscuro en modo oscuro
                       color: Theme.of(context).brightness == Brightness.dark 
                           ? const Color(0xFF1E1E1E) 
                           : Colors.white,
@@ -911,7 +898,6 @@ class _PosPageState extends State<PosPage> {
                                   Text('${_cart.length} productos', 
                                     style: TextStyle(
                                       fontSize: 14, 
-                                      // ✅ Texto gris visible en modo oscuro
                                       color: Theme.of(context).brightness == Brightness.dark 
                                           ? Colors.grey[400] 
                                           : Colors.grey,
@@ -921,7 +907,6 @@ class _PosPageState extends State<PosPage> {
                                     style: TextStyle(
                                       fontSize: 20, 
                                       fontWeight: FontWeight.bold, 
-                                      // ✅ Total visible en modo oscuro
                                       color: Theme.of(context).brightness == Brightness.dark 
                                           ? Colors.green[300] 
                                           : Colors.green,
@@ -936,43 +921,34 @@ class _PosPageState extends State<PosPage> {
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                           Expanded(
-  child: CheckboxListTile(
-    title: const Text('Venta Fiada', style: TextStyle(fontWeight: FontWeight.bold)),
-    subtitle: const Text('El cliente pagará después'),
-    value: _isCredit,
-    onChanged: (v) => setState(() => _isCredit = v ?? false),
-    controlAffinity: ListTileControlAffinity.leading,
-    contentPadding: EdgeInsets.zero,
-    // ✅ PARÁMETROS EN INGLÉS - NO TRADUCIR BAJO NINGÚN CONCEPTO:
-    titleTextStyle: TextStyle(
-      fontWeight: FontWeight.bold,
-      color: Theme.of(context).brightness == Brightness.dark 
-          ? Colors.grey[300] 
-          : null,
-    ),
-    subtitleTextStyle: TextStyle(
-      color: Theme.of(context).brightness == Brightness.dark 
-          ? Colors.grey[400] 
-          : null,
-    ),
-    activeColor: Colors.blue,
-    checkColor: Colors.white,
-  ),
-),
-                                  subtitleTextStyle: TextStyle(
-                                    color: Theme.of(context).brightness == Brightness.dark 
-                                        ? Colors.grey[400] 
-                                        : null,
-                                  ),
-                                  activeColor: Colors.blue,
-                                  checkColor: Colors.white,
-                               ),
+                            Expanded(
+                              child: CheckboxListTile(
+                                title: const Text('Venta Fiada', style: TextStyle(fontWeight: FontWeight.bold)),
+                                subtitle: const Text('El cliente pagará después'),
+                                value: _isCredit,
+                                onChanged: (v) => setState(() => _isCredit = v ?? false),
+                                controlAffinity: ListTileControlAffinity.leading,
+                                contentPadding: EdgeInsets.zero,
+                                // ✅ PARÁMETROS EN INGLÉS - NO TRADUCIR:
+                                titleTextStyle: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).brightness == Brightness.dark 
+                                      ? Colors.grey[300] 
+                                      : null,
+                                ),
+                                subtitleTextStyle: TextStyle(
+                                  color: Theme.of(context).brightness == Brightness.dark 
+                                      ? Colors.grey[400] 
+                                      : null,
+                                ),
+                                activeColor: Colors.blue,
+                                checkColor: Colors.white,
+                              ),
                             ),
                             SizedBox(
                               width: 180,
                               height: 50,
-                            child: ElevatedButton.icon(
+                              child: ElevatedButton.icon(
                                 onPressed: _showCartBottomSheet,
                                 icon: const Icon(Icons.shopping_cart, size: 20),
                                 label: const Text('VER CARRITO', style: TextStyle(fontWeight: FontWeight.bold)),
