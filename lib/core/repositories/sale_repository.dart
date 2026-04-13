@@ -1,7 +1,5 @@
-import 'package:sqflite/sqflite.dart';
 import '../database/database_helper.dart';
 import '../models/sale.dart';
-import '../models/product.dart';
 import 'product_repository.dart';
 
 class SaleRepository {
@@ -32,7 +30,7 @@ class SaleRepository {
         'tasa_cambio': tasaCambio,
       });
 
-      // Insertar líneas de venta
+      // Insertar líneas de venta en detalle_ventas
       for (var line in saleLines) {
         await txn.insert('detalle_ventas', {
           'venta_id': ventaId,
@@ -70,7 +68,7 @@ class SaleRepository {
   Future<List<SaleLine>> getSaleLines(int ventaId) async {
     final db = await DatabaseHelper.instance.database;
     final List<Map<String, dynamic>> maps = await db.query(
-      'detalle_ventas',
+      'detalle_ventas', // ✅ Nombre correcto
       where: 'venta_id = ?',
       whereArgs: [ventaId],
     );
@@ -96,7 +94,6 @@ class SaleRepository {
     );
   }
 
-  // [NUEVO] RF: Obtener ventas del día actual
   Future<List<Sale>> getTodaySales() async {
     final db = await DatabaseHelper.instance.database;
     final now = DateTime.now();
@@ -112,7 +109,6 @@ class SaleRepository {
     return maps.map((m) => Sale.fromMap(m)).toList();
   }
 
-  // [NUEVO] RF: Obtener top 10 productos más vendidos
   Future<List<Map<String, dynamic>>> getTop10Products() async {
     final db = await DatabaseHelper.instance.database;
     final result = await db.rawQuery('''
@@ -131,17 +127,14 @@ class SaleRepository {
     return result;
   }
 
-  // [NUEVO] RF: Reporte de ganancias
   Future<Map<String, dynamic>> getProfitReport() async {
     final db = await DatabaseHelper.instance.database;
     
-    // Total ingresos por ventas
     final ingresosResult = await db.rawQuery(
       'SELECT SUM(total) as total FROM ventas',
     );
     final totalIngresos = (ingresosResult.first['total'] as num?)?.toDouble() ?? 0.0;
     
-    // Total costo de productos vendidos
     final costoResult = await db.rawQuery('''
       SELECT SUM(dv.cantidad * p.costo) as total_costo
       FROM detalle_ventas dv
