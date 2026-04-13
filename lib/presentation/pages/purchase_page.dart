@@ -223,15 +223,19 @@ class _PurchasePageState extends State<PurchasePage> {
                         )),
                       ],
                       value: _selectedSupplier?.id,
+                      // ✅ CORREGIDO: Manejo seguro de null safety en firstWhere
                       onChanged: (int? supplierId) {
                         setState(() {
                           if (supplierId == null) {
                             _selectedSupplier = null;
                           } else {
-                            _selectedSupplier = _suppliers.firstWhere(
-                              (s) => s.id == supplierId,
-                              orElse: () => _suppliers.isNotEmpty ? _suppliers.first : null,
-                            );
+                            try {
+                              _selectedSupplier = _suppliers.firstWhere(
+                                (s) => s.id == supplierId,
+                              );
+                            } catch (e) {
+                              _selectedSupplier = null;
+                            }
                           }
                         });
                       },
@@ -364,7 +368,6 @@ class _PurchasePageState extends State<PurchasePage> {
                               '${_cart.length} productos', 
                               style: TextStyle(
                                 fontSize: 14, 
-                                // ✅ Texto visible en modo oscuro
                                 color: Theme.of(context).brightness == Brightness.dark 
                                     ? Colors.grey[400] 
                                     : Colors.grey,
